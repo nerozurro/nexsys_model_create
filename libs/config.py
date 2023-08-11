@@ -3,7 +3,9 @@ import pandas as pd
 
 
 def update_paths():
-    
+    '''
+    This function to be changed for a selectable path by the user
+    '''
     script = os.getcwd()
     pathDB = r'C:\Leonardo\ManchesterUniversity\Projects\Botswana\Models\data_base\pywr_network_database_xls_V1.21.22_Botswana.xlsm'
     hydra_csv_folder_path='../data/'
@@ -19,7 +21,10 @@ def update_paths():
 
 
 def define_sources(pathDB):
-    
+    '''
+    input str path and reads 'read_sheet' toknow what sheets will be used in json creation
+    returns a dict with the sheet name, rows 2 skip [integer] in the xls and columns to use [A-Z]
+    '''
     df_sheets_dict = pd.read_excel(pathDB, sheet_name='read_sheets',
                                skiprows = 4,
                                usecols = 'C:G')
@@ -42,6 +47,12 @@ def define_sources(pathDB):
     return sheets_dict
 
 def UOM(pathDB):
+    '''
+    in the configuration sheet, user can determine what would be the target units
+    Also UOM table contains all the conversion table from origin units to target units
+    returns a dict with 3 keys: table, sleected and target
+    '''
+    
     UOM_table = pd.read_excel(pathDB,sheet_name='Configuration',skiprows = 17,usecols = 'Z:AN', nrows=18)
     UOM_table.dropna(how='all', inplace=True)
     UOM_table.reset_index(inplace=True, drop=True)

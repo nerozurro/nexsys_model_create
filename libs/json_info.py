@@ -1,4 +1,6 @@
-def json_name():
+import pandas as pd
+
+def json_name(pathDB):
     
     json_file_name=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     json_file_name=json_file_name+str('.json')
@@ -6,11 +8,11 @@ def json_name():
     return json_file_name
 
 
-def json_metadata():
+def json_metadata(pathDB):
     metadata_title = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     metadata_description = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
 
-def json_scenarios():
+def json_scenarios(pathDB):
     scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     try:
         if pd.isna(scenarios_name):
@@ -32,7 +34,7 @@ def json_scenarios():
         print(f"Model is NOT using scenarios")
         is_scenario = False
 
-def json_timestepper():
+def json_timestepper(pathDB):
     timestepper_start = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     timestepper_end = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     timestepper_timestep = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
