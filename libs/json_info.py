@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from libs import parameters, g
 
 def json_name(pathDB):
     
@@ -8,40 +10,72 @@ def json_name(pathDB):
     return json_file_name
 
 
-def json_metadata(pathDB):
-    metadata_title = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-    metadata_description = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+def json_metadata_tittle(pathDB):
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+
+
+def json_metadata_description(pathDB):
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+
 
 def json_scenarios(pathDB):
-    scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    g.global_tracking_variables()
+    
+    # scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    
     try:
-        if pd.isna(scenarios_name):
-            scenarios_name=None
+        g.scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    
+        if pd.isna(g.scenarios_name):
+            g.scenarios_name=None
+            
     except:
-        pass
+        g.scenarios_name=None
+        # pass
         
     try:
         scenarios_size = int(pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"])
+    
     except:
-        print(f"scenario size must be an integer")
+        print(f"Scenario size is not a valid value")
         scenarios_size = None
-    scenarios_description = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-
-    if scenarios_name!=None and scenarios_size!= None:
-        print(f"Model will be created using scenario name {scenarios_name} and scenario size: {scenarios_size}")
-        is_scenario = True
+    
+    
+    try:
+        scenarios_description = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    except: scenarios_description = None
+        
+        
+    if g.scenarios_name!=None and scenarios_size!= None:
+        print(f"Model will under scenario configuration")
+        print(f"scenario name: {g.scenarios_name} and scenario size: {scenarios_size}")
+        g.is_scenario = True
+    
     else:
-        print(f"Model is NOT using scenarios")
-        is_scenario = False
+        print(f"Model will be created without using scenarios")
+        print(f"To create Model with scenarios, please fill the fields scenarios_name and scenarios_size in the excel file")
+        g.is_scenario = False
+        
+    return g.scenarios_name, scenarios_size, scenarios_description, g.is_scenario
 
-def json_timestepper(pathDB):
-    timestepper_start = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-    timestepper_end = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+
+def json_timestepper_start(pathDB):
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+
+
+def json_timestepper_end(pathDB):
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+
+
+def json_timestepper_timestep(pathDB):
     timestepper_timestep = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    
     try:
         timestepper_timestep = int(timestepper_timestep)
     except:
         pass
+    
+    return timestepper_timestep
 
     # comp2type_df = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 4,usecols = 'N:O')
     # comp2type_df.dropna(inplace=True, how='any')
@@ -49,30 +83,14 @@ def json_timestepper(pathDB):
     # for index, row in comp2type_df.iterrows():
     #     comp2type[row['Node Component']]= row['Node Type']
     
+def fill_empty_locations(df_Network_Components,df_Network):
     
-    
-def get_edges():
-    df_Network=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'B', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-    print(f"Selected {df_Network}")
-    df_Network_Components=df_Network_Components[df_Network_Components['name'].notna()]
-    df_Network_Components=df_Network_Components[df_Network_Components['Type'].notna()]
-    df_Network=vars()[str("df_")+df_Network]
-    df_Network = df_Network[['StartNodeName', 'EndNodeName']]
-    
-    
-    df_Network_Components['Node Source'].fillna(df_Network_Components['name'], inplace=True)
-    df_Network_Components = df_Network_Components[df_Network_Components['name'].notna()]
-    df_Network_Components.reset_index(inplace=True, drop=True)
-    df_Network_Components.head(2)
     default_location = [df_Network_Components["location_lat"].mean(), df_Network_Components["location_long"].mean()]
-    
-    
-    
     
     df_empty_loc_Network_Components = df_Network_Components.copy()
     df_empty_loc_Network_Components = df_empty_loc_Network_Components[df_empty_loc_Network_Components['location_lat'].isna()]
     df_empty_loc_Network_Components.reset_index(inplace=True, drop=True)
-
+    
     for index, row in df_empty_loc_Network_Components.iterrows():
             nameNode = row['name']
     #         print(nameNode)
@@ -108,14 +126,49 @@ def get_edges():
             
     df_Network_Components = df_Network_Components[['Type','Status','name','Node Source','location_lat','location_long']]
     
+    return df_Network_Components
     
-def get_attribute_selection():
+    
+    
+def get_nodes(df_Network_Components, df_Network):
+    
+    df_Network_Components['Node Source'].fillna(df_Network_Components['name'], inplace=True)
+    # df_Network_Components = df_Network_Components[df_Network_Components['name'].notna()]
+    df_Network_Components = df_Network_Components.dropna(subset=['name'])
+    df_Network_Components.reset_index(inplace=True, drop=True)
+    # df_Network_Components.head(2)
+    
+    df_Network_Components = fill_empty_locations(df_Network_Components, df_Network)
+    
+    return df_Network_Components
+    
+    
+
+
+def get_edges(pathDB, data):
+    
+    df_Network_Components = data['df_Network_Components']
+    df_Network=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'B', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    
+    print(f"Selected {df_Network}")
+    df_Network_Components = df_Network_Components[df_Network_Components['name'].notna()]
+    df_Network_Components = df_Network_Components[df_Network_Components['Type'].notna()]
+    df_Network = data[str(str("df_")+df_Network)]
+    # df_Network=vars()[data['df_Network6']]
+    df_Network = df_Network[['StartNodeName', 'EndNodeName']]
+    
+    return df_Network
+    
+    
+def get_attribute_selection(df_attribute_selection):
     df_attribute_selection = df_attribute_selection[df_attribute_selection['attributes']!=0]
     df_attribute_selection=df_attribute_selection[df_attribute_selection['attributes'].notna()]
     df_attribute_selection=df_attribute_selection[df_attribute_selection['Parameter Type'].notna()]
     # df_attribute_selection=df_attribute_selection[df_attribute_selection['SourceSheet1'].notna()]
     df_attribute_selection.reset_index(inplace=True, drop=True)
-    df_attribute_selection.tail(10)
+    # df_attribute_selection.tail(10)
+    
+    return df_attribute_selection
 
 
 def create_edges(this_dataframe):
@@ -191,3 +244,150 @@ def delete_nones(_list):
          output_delete_nones.append(delete_none(this_dict))
     return output_delete_nones        
     print(output_delete_nones)
+    
+    
+def initialize_json(pathDB):
+    # Initialize nodes with name and type
+    network_pywr={}
+    network_pywr['metadata'] = {
+        "title": json_metadata_tittle(pathDB),
+        "description": json_metadata_description(pathDB)
+        }
+
+    network_pywr['timestepper'] = {
+        "start": json_timestepper_start(pathDB),
+        "end": json_timestepper_end(pathDB),
+        "timestep": json_timestepper_timestep(pathDB)
+        }
+
+    g.scenarios_name, scenarios_size, scenarios_description, g.is_scenario = json_scenarios(pathDB)
+    
+    if g.is_scenario == True:
+        network_pywr['scenarios'] = [
+            {                
+                "name": g.scenarios_name,
+                "size": scenarios_size,
+                "comment": scenarios_description
+            }
+        ]
+
+    network_pywr['nodes']=[]
+    network_pywr['parameters']={}
+    network_pywr['recorders']={}
+    
+    return network_pywr
+
+
+def node_creation(data, net_comp, network_pywr):
+    
+    df_Network_Components = data['df_Network_Components']
+    df_attribute_selection = data['df_attribute_selection']
+    
+    index_nodes=0
+    for index, row in net_comp.iterrows():
+        print(f"row {row}")
+        print(f"row['CompType'] {row['CompType']}")
+    #     print(f"comp2type {comp2type[row['CompType']], row['CompType']}")
+        
+        node_created, df_attributes_paremeters, df_manual_parameters = createNode(row['CompName'], row['CompType'], data)
+        
+        print(f"######################################################################")
+        print(f"node created: {node_created}")
+        node_created_copy = node_created.copy()
+        print(f"######################################################################")
+        
+        network_pywr['nodes'].append(node_created_copy)
+        print(" ")
+        
+        if (len(df_attributes_paremeters)>0):
+    #         print(f"df_attributes_paremeters {df_attributes_paremeters}")
+    
+            for index, param_row in df_attributes_paremeters.iterrows():
+                parameter_created = parameters.createParameter(node_created, param_row, data)
+                network_pywr['parameters'].update(parameter_created)
+                
+        if (len(df_manual_parameters)>0):
+    #         print(f"df_manual_parameters {df_manual_parameters}")
+    
+            for index, param_row in df_manual_parameters.iterrows():
+                parameter_created = parameters.createParameter(node_created, param_row, data)
+                network_pywr['parameters'].update(parameter_created)      
+                
+        print(f" ")
+        print(f" ")
+        index_nodes+=1
+        
+    return network_pywr
+
+
+def createNode(this_name, this_type, data):
+    """
+    After identify_components function is used. All nodes are created one by one.
+    This function has as input name, type and source if it is a dependent node (eg inflow, evaporation),
+    meaning it is associated to another node
+    It creates node with name and type (all nodes have this 2 attributes) and call complete_node function
+    which complete the node attributes from the pre defined attributes in attr_per_nodes dictionary.
+    It returns node with almost all attributes (not geographic location)
+    """
+    
+    df_Network_Components = data['df_Network_Components']
+    df_attribute_selection = data['df_attribute_selection']
+    
+    print(f"-------- STARTING NODE CREATION FOR {this_name} as {this_type} --------")
+    
+#     this_type = comp2type[this_component]
+    
+    node={}
+    node['name']=this_name
+    node['type']=this_type
+#     node['node_comp']=this_component
+#     node['units']=None
+
+    this_source = df_Network_Components[df_Network_Components['name']==this_name]['Node Source'].item()
+    if (this_source!=None):
+        node['node_source']=this_source
+    else: node['node_source'] = this_name
+
+
+    print(f"DF df_attribute_selection !!! _____ {df_attribute_selection}")
+    df_attributes = df_attribute_selection[df_attribute_selection['Node name']==this_name]
+    print(f"DF ATTRIBUTES 1 _____ {df_attributes}")
+    df_parameters_manual = df_attributes[df_attributes['Node Type']=='parameter']
+    df_attributes = df_attributes[df_attributes['Node Type']==this_type]
+    
+    print(f"DF ATTRIBUTES 2 _____ {df_attributes}")
+    print(f"DF ATTRIBUTES 3 _____ {df_parameters_manual}")
+    df_attributes_constantV = df_attributes[df_attributes['Parameter Type']=='ConstantValue']
+    df_attributes_constantL = df_attributes[df_attributes['Parameter Type']=='ConstantList']
+#     df_attributes_paremeters= df_attributes[df_attributes['Parameter Type']!='ConstantValue']
+    df_attributes_paremeters= df_attributes[df_attributes['Parameter Type'].isin(['ConstantValue','ConstantList'])==False]
+    
+    
+    
+    
+    additional_attr={}
+    
+    if len(df_attributes_constantV)>0:
+        df_attributes_constantV.reset_index(inplace=True, drop=True)
+        additional_attr = parameters.create_constant_attributes(df_attributes_constantV, this_name, this_type, this_source, data)
+        node.update(additional_attr) 
+        
+    if len(df_attributes_constantL)>0:
+        df_attributes_constantL.reset_index(inplace=True, drop=True)
+        additional_attr = parameters.create_constant_List(df_attributes_constantL, this_name, this_type, this_source, data)
+#         print(f"CONFIRM CONSTANT LIST {additional_attr}")
+        node.update(additional_attr) 
+    
+    if len(df_attributes_paremeters)>0:
+        df_attributes_paremeters.reset_index(inplace=True, drop=True)
+        additional_attr, df_attributes_paremeters = parameters.create_node_parameter_names(df_attributes_paremeters, this_name, this_type, this_source)
+        node.update(additional_attr) 
+        
+    if len (df_parameters_manual)>0:
+        df_parameters_manual.reset_index(inplace=True, drop=True)
+    
+#     print('')
+#     print(f"NODE CREATED INSIDE createnode: {node}") 
+#     print("DATAFRAME TO CONSTRUCT PARAMETERS")
+#     print(df_attributes_paremeters)
+    return node,df_attributes_paremeters, df_parameters_manual

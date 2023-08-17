@@ -1,14 +1,41 @@
 import os
 import pandas as pd
 
+from libs import g
+    
+        
+
+def dataframes_setup():
+    '''
+    This function create dictionaries to track what kind of dataframes are being created.
+    It is important for time series exportation or to know if time series is read externally
+    '''
+    
+    g.dataframe_types_list = ['Time Series', 'Time Series pivoted', 'Monthly']
+    g.dict_dataframeparameter={}
+    g.dict_dataframeparameter['Time Series']={}
+    g.dict_dataframeparameter['Time Series pivoted']={}
+    g.dict_dataframeparameter['Monthly']={}
+    g.dict_dataframeparameter['External DataFrame']={}
+
+    g.dict_dataframeparameter_column={}
+    g.dict_dataframeparameter_column['Time Series']={}
+    g.dict_dataframeparameter_column['Time Series pivoted']={}
+    g.dict_dataframeparameter_column['External DataFrame']={}
+
+
 
 def update_paths():
     '''
     This function to be changed for a selectable path by the user
     '''
+    
+    g.global_tracking_variables()
+    dataframes_setup()
+    
     script = os.getcwd()
-    pathDB = r'C:\Leonardo\ManchesterUniversity\Projects\Botswana\Models\data_base\pywr_network_database_xls_V1.21.22_Botswana.xlsm'
-    hydra_csv_folder_path='../data/'
+    pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\Model_Creation\model_creaction_xls\pywr_network_database_xls_V1.21.22_Botswana.xlsm'
+    g.hydra_csv_folder_path='../data/'
     
     output_folder_path= os.path.normpath(os.path.join('..',script, "../output/"))
     export_folder_path= os.path.normpath(os.path.join('..',script, "../output/data/"))
@@ -16,7 +43,7 @@ def update_paths():
     os.makedirs(output_folder_path, exist_ok=True)
     os.makedirs(export_folder_path, exist_ok=True)
     
-    return pathDB, script, export_folder_path, hydra_csv_folder_path
+    return pathDB, script, export_folder_path, g.hydra_csv_folder_path
 
 
 
@@ -69,15 +96,3 @@ def UOM(pathDB):
     
     return UOMs
 
-def dataframes_setup():
-    dataframe_types_list = ['Time Series', 'Time Series pivoted', 'Monthly']
-    dict_dataframeparameter={}
-    dict_dataframeparameter['Time Series']={}
-    dict_dataframeparameter['Time Series pivoted']={}
-    dict_dataframeparameter['Monthly']={}
-    dict_dataframeparameter['External DataFrame']={}
-
-    dict_dataframeparameter_column={}
-    dict_dataframeparameter_column['Time Series']={}
-    dict_dataframeparameter_column['Time Series pivoted']={}
-    dict_dataframeparameter_column['External DataFrame']={}

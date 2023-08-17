@@ -40,12 +40,47 @@ def main():
     warnings.filterwarnings("ignore")
     print("STARTING CONVERSION FROM XLS TO JSON")
     
-    pathDB, script, export_folder_path, hydra_csv_folder_path = config.update_paths()
-    # print(f"pathDB: {pathDB}")
-    sheets_dict = config.define_sources(pathDB) # dictionary
-    UOMs = config.UOM(pathDB) # dictionary
     
+    # config.global_tracking_variables()
+    
+    '''get path of xls file'''
+    pathDB, script, export_folder_path, hydra_csv_folder_path = config.update_paths()
+    
+    '''dictionary with all sheets to be read from xls file'''
+    sheets_dict = config.define_sources(pathDB)
+    
+    '''dictionary of Units of Measurements (conversions)'''
+    UOMs = config.UOM(pathDB)
+    
+    '''read data from xls file creating all dataframes'''
     data, dict_df_units = read_data.read_data(pathDB, sheets_dict)
+    
+    data['df_Network'] = json_info.get_edges(pathDB, data)
+    
+    data['df_Network_Components'] = json_info.get_nodes(data['df_Network_Components'], data['df_Network'])
+    
+    # print(data['df_Network_Components'])
+    
+    data['df_attribute_selection'].update(json_info.get_attribute_selection(data['df_attribute_selection']))
+    
+    net_comp = json_info.identify_components(data['df_Network'], data['df_Network_Components'])
+    net_comp = net_comp.sort_values(by=['CompType'], ascending=True)
+    
+    network_pywr = json_info.initialize_json(pathDB)
+    
+    
+    
+    network_pywr = json_info.node_creation(data, net_comp, network_pywr)
+    
+    print('/////')
+    print('/////')
+    print('/////')
+    print('/////')
+    
+    print(network_pywr)
+    
+    
+    # print(net_comp)
     
 
 

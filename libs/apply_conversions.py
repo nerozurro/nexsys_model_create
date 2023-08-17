@@ -3,12 +3,12 @@ import ast #connvert string to dictionary
 from calendar import monthrange
 
 def monthly_days():
+    # Create dataframe with days per month. Globar variables
     
     global months, days_month, df_days_month
     
     months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     days_month = [31, 28, 31,30,31,30,31,31,30,31,30,31]
-
     list_of_tuples = list(zip(months, days_month))
     
     df_days_month = pd.DataFrame(list_of_tuples,columns=['months', 'days_month'])
@@ -18,6 +18,10 @@ def monthly_days():
 
 
 def convert_time_flowvalue(dataframetoconvert_flowvalue, units_from, units_to, column_name):
+    # Convert time units from vol/Year or vol/Month to vol/Day
+    # vol = volume. It can be ML or Mm3
+    # This function is called from apply_conversions.convert_units_column_by_colum()
+    # This function only applies Time conversion. It does not apply volume conversion
 
     if not units_from in['ML/Day','Mm3/Day']:
         
@@ -38,6 +42,10 @@ def convert_time_flowvalue(dataframetoconvert_flowvalue, units_from, units_to, c
     
     
 def convert_units_column_by_colum(this_sheet, unitstoconvert, dataframetoconvert, UOMs, dict_df_units):
+    # Convert units column by column. Usually for constant Parameter or Constant values
+    # This function is called from apply_conversions.apply_conversions()
+    # This function only applies units conversion. It does not apply time conversion
+    # All conversions are applied as per UOMs table. Which is registered in the UOMs dictionary from excel->config->UOMs
     
     print(f" ----> Requested column by column conversion for '{this_sheet}'")
     
@@ -45,32 +53,38 @@ def convert_units_column_by_colum(this_sheet, unitstoconvert, dataframetoconvert
     UOM_table = UOMs['UOM_table']
     
     list_units=[]
-    unitstoconvert
+    # unitstoconvert = unitstoconvert.squeeze() TO CONFIRM IF THIS IS NEEDED
 
     for index, row in unitstoconvert.iterrows():
         column_name = row['column_name']
         units_from = row['units']
-        # print(f"units_from {units_from}")
         units_to   = UOM_target[UOM_target['measurement'] == row['uom']]['unit'].item()
-        # print(f"units_to {units_to}")
         factor = UOM_table[UOM_table['unit']== units_from][units_to].item()
-        # print(f"Converting {column_name} from {units_from} to {units_to} -> need to apply factor {factor}")
+        
         if factor!= 1:
+            
             dataframetoconvert[column_name] = dataframetoconvert[column_name] * factor
             print(f" ----> Converted sheet '{this_sheet}' column '{column_name}' from '{units_from}' to '{units_to}' -> Factor applied: '{factor}'")
             units_from = units_to
+            
         else: print(f" ----> No units conversion was applied in '{this_sheet}' column '{column_name}' from '{units_from}' to '{units_to}'")
         
         dataframetoconvert[column_name], units_to = convert_time_flowvalue(dataframetoconvert[column_name], units_from, units_to, column_name)     
-        
         dict_df_units[f"UOM_{this_sheet}_{column_name}"]=units_to
-    # print(f"AFTER CONVERSION {dataframetoconvert}") 
     
     return dataframetoconvert, list_units, dict_df_units
 
 
 
 def convert_units_monthly_table(this_sheet, unitstoconvert, dataframetoconvert, UOMs, dict_df_units):
+    '''
+    Returns: monthly profile (dataframe), list_units(list), dict_df_units (dictionary)
+    Convert units for monthly tables. Usually applied for monthly profile parameters
+    This function is called from apply_conversions.apply_conversions()
+    All conversions are applied as per UOMs table. Which is registered in the UOMs dictionary from excel->config->UOMs
+    Monthly tables are 12 columns (Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec)
+    This function can make time conversions if flow from Month or Year to Day
+    '''
     print(f" ----> Requested monthly table conversion for '{this_sheet}'")
     
     UOM_target = UOMs['UOM_target']
@@ -83,33 +97,39 @@ def convert_units_monthly_table(this_sheet, unitstoconvert, dataframetoconvert, 
     units_to   = UOM_target[UOM_target['measurement'] == unitstoconvert['uom']]['unit'].item()
     factor = UOM_table[UOM_table['unit']== units_from][units_to].item()
 
-    # print(f"units from {units_from}")
-    # print(f"units_to {units_to}")
-    
-    # print(f"Converting volume {this_sheet} from {units_from} to {units_to} -> need to apply factor {factor}")
-    if factor!= 1:
+    if factor!= 1: # Unit conversion according to table in excel file UOM
         dataframetoconvert[months] = dataframetoconvert[months] * factor
         print(f" ----> Converted volume '{this_sheet}' from '{units_from}' to '{units_to}' -> Factor applied: '{factor}'")
+    
     else: print(f" ----> No Volumne conversion was applied in {this_sheet} from {units_from} to {units_to}")
     
+    # If needed time conversion for flow from Month or Year to Day
     if units_from in['ML/Month','Mm3/Month']:
+        
         if units_to in['ML/Day','Mm3/Day']:
-            # print(f"Converting time {this_sheet} from {units_from} to {units_to}")
             dataframetoconvert = table_cnv_month2daily(dataframetoconvert)
             print(f" ----> Converted Time '{this_sheet}' from monthly total value to average per day (Total month / Days of month)")
+        
         else:
             print(f" ----> No time recognized for '{this_sheet}' from '{units_from}' to '{units_to}'")
+    
     else:
         print(f" ----> Not applied conversion time for '{this_sheet}' from '{units_from}' to '{units_to}'")   
-
         
     dict_df_units[f"UOM_{this_sheet}"]=units_to
-#     print(f"AFTER CONVERSION {dataframetoconvert}")
+    
     return dataframetoconvert, units_to, dict_df_units
 
 
 
 def convert_units_timeseries(UOM_timeseries_columns, this_sheet, unitstoconvert, dataframetoconvert, UOMs, dict_df_units):
+    '''
+    Returns: timeseries (dataframe), units_to (str), dict_df_units (dictionary)
+    Convert units for timeseries. 
+    This function is called from apply_conversions.apply_conversions()
+    All conversions are applied as per UOMs table. Which is registered in the UOMs dictionary from excel->config->UOMs
+    By the moment, this function can resample flow and volume from month to day, and convert units
+    '''
     
     print(f" ----> Requested timeseries conversion for '{this_sheet}'")
     
@@ -120,50 +140,46 @@ def convert_units_timeseries(UOM_timeseries_columns, this_sheet, unitstoconvert,
     units_from = unitstoconvert['units']
     units_to   = UOM_target[UOM_target['measurement'] == unitstoconvert['uom']]['unit'].item()
     factor = UOM_table[UOM_table['unit']== units_from][units_to].item()
-    # print(f"Converting {this_sheet} from {units_from} to {units_to} -> need to apply factor {factor}")
-    # print(f"Time Series original INPUT: {dataframetoconvert.head(3)}")
+
     if factor!= 1:
         dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert[UOM_timeseries_columns] * factor
         print(f" ----> Converted '{this_sheet}' from '{units_from}' to '{units_to}' -> Factor applied: '{factor}'")
+    
     else:
         print(f" ----> No Volume conversion was applied in '{this_sheet}' from '{units_from}' to '{units_to}'")
-        
-        
-    # print(f"units from {units_from}")
-    # print(f"units_to {units_to}")
     
+    
+    # Time resampling manual. Need to update using resample function
+    # This is done manually as It can be expanded to more time conversions. Still on development if needed
     if not units_from in['ML/Day','Mm3/Day']:
+        
         if units_from in ['ML/Month', 'Mm3/Month', 'ML', 'Mm3']: #FLOW and volume
-#             print("ENTRA EXITOSO A CHECK DAY")
+            
             dataframetoconvert['newdate'] = pd.to_datetime(dataframetoconvert['timestep']).dt.to_period('m')
             dataframetoconvert["days"] = [monthrange(x.year, x.month)[1] for x in dataframetoconvert['newdate']]
-    #         print(f"UOM_timeseries_columns {UOM_timeseries_columns}")
-    #         print(f"BEFORE dataframetoconvert {dataframetoconvert}")
             dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert.loc[:, UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0)
             dataframetoconvert.drop(columns=['days','newdate'], inplace=True)
-            # print(f"Time Series after dividing by days: {dataframetoconvert.head(3)}")
             print(f" ----> Converted Time '{this_sheet}' from monthly total value to average per day ('{units_from}' to '{units_to}')") 
+    
     dict_df_units[f"UOM_{this_sheet}"]=units_to
+    
     return dataframetoconvert, units_to, dict_df_units
 
    
 
-def table_cnv_month2daily(this_df_monthly):     
+def table_cnv_month2daily(this_df_monthly):   
+    '''
+    This function is called from monthlyprofile.
+    get average per day from total in month
+    '''  
     for thismonthdays in df_days_month:
+        
         actual_month=thismonthdays
         number_days=int(df_days_month[thismonthdays][0])
         this_df_monthly[actual_month] = this_df_monthly[[actual_month]]/number_days
+        
     return this_df_monthly
 
-
-
-def flowcnv_month2daily(this_df_flow):
-        
-    for thismonthdays in df_days_month:
-        actual_month=thismonthdays
-        number_days=int(df_days_month[thismonthdays][0])
-        this_df_flow[actual_month] = this_df_flow[[actual_month]]/number_days
-    return this_df_flow
 
 
 
@@ -174,12 +190,13 @@ def cnv(row):
     # print(row)
     # print(datStr)
 #     return pd.to_datetime(datStr, format='%d %b %Y').date()
+    # Change date format to YYYY-MM-DD
     return pd.to_datetime(datStr, format='%d %b %Y').date().strftime('%Y-%m-%d')
 
 
 
 def ts2unstack(timeseries_df, column_value):
-    """                                 Convert
+    """                                  Converts
             Node     index    values                    index         Node1    Node2    ........
             Node1  01-01-01   10           ====>      01-01-01         10        20
             Node2  01-01-01   20                        .
@@ -198,8 +215,8 @@ def ts2unstack(timeseries_df, column_value):
 
 def df2ts2unstack(timeseries_df): 
     """ 
-    Read Dataframe Node Year Jan Feb Mar May .....
-    Return         Date Node1 Node2 Node3....
+    Read Dataframe Node     Year     Jan Feb Mar May ... Dec
+    Return         Date     Node1  Node2  Node3....
     """
     timeseries_df=timeseries_df[timeseries_df['Node'].notna()]
     timeseries_df=timeseries_df[timeseries_df['Year'].notna()]
@@ -209,16 +226,15 @@ def df2ts2unstack(timeseries_df):
     timeseries_df.drop(['Year'], axis=1,inplace=True) # Drop extra column year
     timeseries_df["timestep"] = pd.to_datetime(timeseries_df["timestep"])
     timeseries_df = timeseries_df.set_index('timestep')
-    
-#     timeseries_df = timeseries_df.sort_values(by='timestep').reset_index(drop=True) # order dataframe so it's time comtinuous
     timeseries_df = pd.pivot_table(timeseries_df, values='level', index=timeseries_df.index,columns=['Node'])
-#     timeseries_df = pd.pivot_table(timeseries_df, values='level', index=['date'],columns=['Dam'])
+
     return timeseries_df
 
 
 
 
 def verify_value_type(constant_value):
+    # Standireze lower for TRUES and FALSES
     if constant_value.lower() == 'true':
         constant_value = True
     elif constant_value.lower() == 'false':
@@ -228,47 +244,53 @@ def verify_value_type(constant_value):
 
 
 def transform_value_type(constant_value, function_special='none', lform='.6e'):
-    if function_special == 'to_dict':
+    '''
+    input: constant_value (can be number, float, text, dictionary form,..), function_special, 
+    lform: 6 decimals, scientific notation
+    
+    to_dict: if user need to input special notation. Or if parameter is too deep to be included  in excel file
+    to_list: if the type of the value is a list. First transform to str, then tries float and then integer
+             eg: ['param_mm', 'param_area', 0.001]
+             proper inputation in xls--> param_mm; param_area; 0.001  
+    '''
+    if function_special == 'to_dict': # if dict
         constant_value = ast.literal_eval(constant_value)
-    elif function_special == 'to_list':
-        try:
+        
+    elif function_special == 'to_list': # if list
+        
+        try: # sometimes needed empty list. User needs to input none
             if constant_value=='none':
                 constant_value=[]
-            else:
+            else: # if values, then split by ; and space '; ' as separator
                 constant_value = [x.strip() for x in constant_value.split('; ')]
-        except:
+        except: 
             constant_value=[str(constant_value)]
-#         print(type(constant_value))
+
         constant_value2=constant_value
+        
         for i in range(len(constant_value)):
+            
             try: # Try to convert each item to float 
                 constant_value2[i] = float(str(constant_value2[i]))
                 constant_value2[i] = float(format(constant_value2[i], lform))
                 if constant_value2[i].is_integer(): constant_value2[i]=int(constant_value2[i])
             except:
                 pass
-#             try: # Try to convert each item to int. Values will decimals will fail this try
-#                 constant_value2[i] = int(constant_value[i])
-#             except:
-#                 pass
-#             print(constant_value2)
     
         constant_value = list(constant_value2)
         
     else:
-        # print(f"entra a transformar el valor {constant_value}")
         constant_value2=constant_value
+        
         try: 
-            # print(f"Try 1")
             constant_value2 = float(str(constant_value2))
-            # print(f"Try 2")
             constant_value2 = float(format(constant_value2, lform))
-            # print(f"Try 3")
             if constant_value2.is_integer(): constant_value2=int(constant_value2)
-            # print(f"Try 4")
-        except:
-            print(f"CANNT TRSNFORM VALUE {constant_value}")
+            
+        except: # ADD WARNING
+            print(f"Can Not Transform value {constant_value}")
             pass
+        
         constant_value = constant_value2
         
     return constant_value
