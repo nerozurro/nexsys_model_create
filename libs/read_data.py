@@ -1,9 +1,5 @@
 import pandas as pd
 from libs import apply_conversions, config
-
-
-
-    
     
     
 def read_data(pathDB, sheets_dict):    

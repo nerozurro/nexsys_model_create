@@ -170,7 +170,7 @@ def convert_units_timeseries(UOM_timeseries_columns, this_sheet, unitstoconvert,
 def table_cnv_month2daily(this_df_monthly):   
     '''
     This function is called from monthlyprofile.
-    get average per day from total in month
+    get dataframe with monthly values and return dataframe with daily values (average per day)
     '''  
     for thismonthdays in df_days_month:
         
@@ -185,12 +185,9 @@ def table_cnv_month2daily(this_df_monthly):
 
 # source: https://stackoverflow.com/questions/55050351/combining-year-and-month-columns-to-form-index-for-time-series-data
 def cnv(row):
-#     print(f"row.date {row.date}")
+    '''    Change date format to YYYY-MM-DD    '''
+    
     datStr = '01 ' + row.date + ' ' + str(int(row.Year))
-    # print(row)
-    # print(datStr)
-#     return pd.to_datetime(datStr, format='%d %b %Y').date()
-    # Change date format to YYYY-MM-DD
     return pd.to_datetime(datStr, format='%d %b %Y').date().strftime('%Y-%m-%d')
 
 
@@ -202,13 +199,11 @@ def ts2unstack(timeseries_df, column_value):
             Node2  01-01-01   20                        .
              .         .       .                        .
     """        
-#     print(f"ts2unstack DF, {timeseries_df.head(2)}")
+
     timeseries_df["timestep"] = pd.to_datetime(timeseries_df["timestep"])
     timeseries_df = timeseries_df.set_index('timestep')
-#     df2 = pd.pivot_table(df, index=df.index.date, columns=df.index.hour, values="Value")
     timeseries_df=pd.pivot_table(timeseries_df, values=column_value, index=timeseries_df.index,columns=['Node'])
-#     timeseries_df=timeseries_df.sort_index()
-#     print(f"AFTER PIVOT, {timeseries_df.head(2)}")
+
     return timeseries_df
 
 

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from libs import g
+from libs import globals
     
         
 
@@ -11,17 +11,17 @@ def dataframes_setup():
     It is important for time series exportation or to know if time series is read externally
     '''
     
-    g.dataframe_types_list = ['Time Series', 'Time Series pivoted', 'Monthly']
-    g.dict_dataframeparameter={}
-    g.dict_dataframeparameter['Time Series']={}
-    g.dict_dataframeparameter['Time Series pivoted']={}
-    g.dict_dataframeparameter['Monthly']={}
-    g.dict_dataframeparameter['External DataFrame']={}
+    globals.dataframe_types_list = ['Time Series', 'Time Series pivoted', 'Monthly']
+    globals.dict_dataframeparameter={}
+    globals.dict_dataframeparameter['Time Series']={}
+    globals.dict_dataframeparameter['Time Series pivoted']={}
+    globals.dict_dataframeparameter['Monthly']={}
+    globals.dict_dataframeparameter['External DataFrame']={}
 
-    g.dict_dataframeparameter_column={}
-    g.dict_dataframeparameter_column['Time Series']={}
-    g.dict_dataframeparameter_column['Time Series pivoted']={}
-    g.dict_dataframeparameter_column['External DataFrame']={}
+    globals.dict_dataframeparameter_column={}
+    globals.dict_dataframeparameter_column['Time Series']={}
+    globals.dict_dataframeparameter_column['Time Series pivoted']={}
+    globals.dict_dataframeparameter_column['External DataFrame']={}
 
 
 
@@ -30,20 +30,20 @@ def update_paths():
     This function to be changed for a selectable path by the user
     '''
     
-    g.global_tracking_variables()
+    globals.global_tracking_variables()
     dataframes_setup()
     
     script = os.getcwd()
     pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\Model_Creation\model_creaction_xls\pywr_network_database_xls_V1.21.22_Botswana.xlsm'
-    g.hydra_csv_folder_path='../data/'
+    globals.hydra_csv_folder_path='../data/'
     
-    output_folder_path= os.path.normpath(os.path.join('..',script, "../output/"))
-    export_folder_path= os.path.normpath(os.path.join('..',script, "../output/data/"))
+    globals.output_folder_path= os.path.normpath(os.path.join('..',script, "../output/"))
+    globals.export_folder_path= os.path.normpath(os.path.join('..',script, "../output/data/"))
     
-    os.makedirs(output_folder_path, exist_ok=True)
-    os.makedirs(export_folder_path, exist_ok=True)
+    os.makedirs(globals.output_folder_path, exist_ok=True)
+    os.makedirs(globals.export_folder_path, exist_ok=True)
     
-    return pathDB, script, export_folder_path, g.hydra_csv_folder_path
+    return pathDB, script, globals.export_folder_path, globals.hydra_csv_folder_path
 
 
 
