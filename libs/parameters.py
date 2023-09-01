@@ -405,7 +405,7 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
 def completeDataFrameParameterExternal(this_node_info, this_param_row):
     globals.global_tracking_variables()
     
-    print(f"   --> Starting DataFrameParameter for {this_param_row['ParameterName']}") 
+    print(f"   --> Starting External DataFrameParameter for {this_param_row['ParameterName']}") 
     additional_param_attr={}
     
     file_name = this_param_row['SourceSheet1']               
@@ -428,6 +428,11 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     additional_param_attr["index_col"]= 0
     additional_param_attr["parse_dates"]= True
     
+    print('')
+    print('this_param_row', this_param_row)
+    print('')
+    
+    # if 'DataFrame scenario' in this_param_row.columns:
     if this_param_row.notnull()['DataFrame scenario']:  
         '''
         If build in scenarios and both columns on excel file are filled

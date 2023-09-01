@@ -38,13 +38,19 @@ def main():
     # config.global_tracking_variables()
     
     '''get path of xls file'''
-    pathDB, script, export_folder_path, hydra_csv_folder_path = config.update_paths()
-    
-    '''dictionary with all sheets to be read from xls file'''
-    sheets_dict = config.define_sources(pathDB)
+    pathDB, export_folder_path, hydra_csv_folder_path = config.update_paths()
     
     '''dictionary of Units of Measurements (conversions)'''
     UOMs = config.UOM(pathDB)
+    
+    
+    '''dictionary with all sheets to be read from xls file'''
+    sheets_dict = config.define_main_sources(pathDB)
+    sheets_dict = config.define_data_sources(pathDB,sheets_dict)
+    
+    print(f"Information of sheets to read: {sheets_dict}")
+     
+    
     
     '''read data from xls file creating all dataframes'''
     data, dict_df_units = read_data.read_data(pathDB, sheets_dict)

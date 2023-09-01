@@ -6,21 +6,21 @@ import os
 
 def json_name(pathDB):
     
-    json_file_name=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    json_file_name=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'F', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     json_file_name=json_file_name+str('.json')
     
     return json_file_name
 
 
 def json_metadata_tittle(pathDB):
-    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'F', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
 
 
 def json_metadata_description(pathDB):
-    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'E', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 3,usecols = 'F', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
 
 
-def json_scenarios(pathDB):
+def json_scenarios(pathDB):  # Scenarios still to be implemented
     globals.global_tracking_variables()
     
     # scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
@@ -62,15 +62,15 @@ def json_scenarios(pathDB):
 
 
 def json_timestepper_start(pathDB):
-    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'K', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
 
 
 def json_timestepper_end(pathDB):
-    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    return pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 3,usecols = 'K', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
 
 
 def json_timestepper_timestep(pathDB):
-    timestepper_timestep = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'L', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    timestepper_timestep = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'K', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     
     try:
         timestepper_timestep = int(timestepper_timestep)
@@ -133,7 +133,7 @@ def fill_empty_locations(df_Network_Components,df_Network):
             df_Network_Components.loc[df_Network_Components['name'] == nameNode,'location_lat'] = new_lat
             df_Network_Components.loc[df_Network_Components['name'] == nameNode,'location_long'] = new_lon
             
-    df_Network_Components = df_Network_Components[['Type','Status','name','Node Source','location_lat','location_long']]
+    df_Network_Components = df_Network_Components[['Type','name','Node Source','location_lat','location_long']]
     
     return df_Network_Components
 
@@ -200,7 +200,7 @@ def get_nodes(df_Network_Components, df_Network):
 def get_edges(pathDB, data):
     
     df_Network_Components = data['df_Network_Components']
-    df_Network=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'B', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    df_Network=pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 3,usecols = 'C', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
     
     print(f"Network to be created: {df_Network}")
     
