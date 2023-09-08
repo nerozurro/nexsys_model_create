@@ -98,6 +98,62 @@ def createParameter(node_info, param_row, data):
 
 
 
+def create_extra_parameters(network_pywr, df_extra_parameters):
+    df_extra_parameters_ = df_extra_parameters.copy()
+    df_extra_parameters_=df_extra_parameters_[df_extra_parameters_['Value'].notna()]
+    df_extra_parameters_=df_extra_parameters_[df_extra_parameters_['Parameter Type'].notna()]
+    df_extra_parameters_.reset_index(inplace=True, drop=True)
+    param_not_included = []
+
+    extra_parameters_list = list(df_extra_parameters_['Parameter Name'].unique())
+    extra_parameters_list
+
+    for actual_parameter in extra_parameters_list:
+        actual_parameter_df = df_extra_parameters_[df_extra_parameters_['Parameter Name']==actual_parameter]
+        actual_parameter_df.reset_index(inplace=True, drop=True)
+
+        param_dict = {}
+        param_dict[actual_parameter]={}
+
+        for index, row in actual_parameter_df.iterrows():
+
+            name_attr = row['Parameter Attributes']
+            data_attr = row['Value']
+
+            try:
+                data_attr = apply_conversions.verify_value_type(data_attr)
+            except:
+                print(f"No bool value transformation done for {actual_parameter} -> {name_attr}")
+
+            if row.notnull()['function_special']:
+                print(f"user wants to use function {row['function_special']} on {row['Parameter Attributes']} for parameter {row['Parameter Name']}")
+                try:
+                    data_attr = apply_conversions.transform_value_type(data_attr, row['function_special'])
+                except:
+                    print(f"ERROR: function {row['function_special']} not recognized")
+            else:
+                try:
+                    data_attr = apply_conversions.transform_value_type(data_attr, 'none')
+                except:
+                    pass
+
+
+            param_dict[actual_parameter][name_attr]=data_attr
+
+        if actual_parameter in network_pywr['parameters']:
+            print(f"Existe el parametro {actual_parameter}")
+            network_pywr['parameters'][actual_parameter].update(param_dict[actual_parameter])
+        else:
+            print(f"NO Existe el parametro {actual_parameter}")
+            param_not_included.append(actual_parameter)
+
+    return network_pywr, param_not_included
+
+    print(f"parameters defined but not included in network: {param_not_included}")
+    
+    
+    
+
 def create_constant_List(df_attributes_constantL, this_name, this_type, this_source, data):
     globals.global_tracking_variables()
     # print(f"---- Creating constant attribute List {df_attributes_constantL['attributes']} for {this_name} --------")
@@ -415,9 +471,22 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     
     
     
-    if globals.is_scenario == True:
-        additional_param_attr["scenario"]= globals.scenarios_name
-    else:
+    if globals.is_scenario == True:     # ''' If build in scenarios and both columns on excel file are filled '''
+                
+        additional_param_attr["key"] = this_node_info['node_source'] # Comment this line if printing NaN
+        
+        if this_param_row.notnull()['DataFrame key']:
+            additional_param_attr["key"] = this_param_row['DataFrame key']
+            
+        additional_param_attr["scenario"]= this_param_row['DataFrame scenario']
+        
+        try:
+            # Temporal development, in case column attribute has been created
+            del additional_param_attr["column"]
+        except:
+            pass
+
+    else: # if no scenario case
         if this_param_row.notnull()['Column1']:
             additional_param_attr["column"]= this_param_row['Column1']
         else:
@@ -433,19 +502,19 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     print('')
     
     # if 'DataFrame scenario' in this_param_row.columns:
-    if this_param_row.notnull()['DataFrame scenario']:  
-        '''
-        If build in scenarios and both columns on excel file are filled
-        '''
-        additional_param_attr["key"] = this_param_row['DataFrame key']
-        additional_param_attr["key"] = this_node_info['node_source'] # Comment this line if printing NaN
-        additional_param_attr["scenario"]= this_param_row['DataFrame scenario']
+    # if this_param_row.notnull()['DataFrame scenario']:  
+    #     '''
+    #     If build in scenarios and both columns on excel file are filled
+    #     '''
+    #     additional_param_attr["key"] = this_param_row['DataFrame key']
+    #     additional_param_attr["key"] = this_node_info['node_source'] # Comment this line if printing NaN
+    #     additional_param_attr["scenario"]= this_param_row['DataFrame scenario']
         
-        try:
-            # Temporal development, in case column attribute has been created
-            del additional_param_attr["column"]
-        except:
-            pass
+    #     try:
+    #         # Temporal development, in case column attribute has been created
+    #         del additional_param_attr["column"]
+    #     except:
+    #         pass
 
       
     # Construct dictionary for later dataframes creation:
@@ -464,6 +533,71 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     globals.dict_dataframeparameter[df_origin_type][file_name].append(ref_name)   
     # print("finished dataframeexternal")
     return additional_param_attr
+
+
+
+# def old_completeDataFrameParameterExternal(this_node_info, this_param_row):
+#     globals.global_tracking_variables()
+    
+#     print(f"   --> Starting External DataFrameParameter for {this_param_row['ParameterName']}") 
+#     additional_param_attr={}
+    
+#     file_name = this_param_row['SourceSheet1']               
+#     ref_name = this_param_row['Node name']
+    
+#     additional_param_attr["url"]= f"{globals.hydra_csv_folder_path}{file_name}"
+    
+    
+    
+#     if globals.is_scenario == True:
+#         additional_param_attr["scenario"]= globals.scenarios_name
+#     else:
+#         if this_param_row.notnull()['Column1']:
+#             additional_param_attr["column"]= this_param_row['Column1']
+#         else:
+#             additional_param_attr["column"]= this_node_info['node_source']
+        
+        
+# #     additional_param_attr["index_col"]= "Date"
+#     additional_param_attr["index_col"]= 0
+#     additional_param_attr["parse_dates"]= True
+    
+#     print('')
+#     print('this_param_row', this_param_row)
+#     print('')
+    
+#     # if 'DataFrame scenario' in this_param_row.columns:
+#     if this_param_row.notnull()['DataFrame scenario']:  
+#         '''
+#         If build in scenarios and both columns on excel file are filled
+#         '''
+#         additional_param_attr["key"] = this_param_row['DataFrame key']
+#         additional_param_attr["key"] = this_node_info['node_source'] # Comment this line if printing NaN
+#         additional_param_attr["scenario"]= this_param_row['DataFrame scenario']
+        
+#         try:
+#             # Temporal development, in case column attribute has been created
+#             del additional_param_attr["column"]
+#         except:
+#             pass
+
+      
+#     # Construct dictionary for later dataframes creation:
+#     df_origin_type = "External DataFrame"
+
+#     # print(f"dict_dataframeparameter {globals.dict_dataframeparameter}")
+#     # print(f"df_origin_type {df_origin_type}")
+    
+#     if file_name in globals.dict_dataframeparameter[df_origin_type]:
+#         print(f"          {file_name} already exist in DF Dictionary")
+#     else:
+#         # print(f"{file_name} will be created in DF Dictionary")
+#         globals.dict_dataframeparameter[df_origin_type][file_name]=[]
+# #         print(f"df_source {df_source}")
+    
+#     globals.dict_dataframeparameter[df_origin_type][file_name].append(ref_name)   
+#     # print("finished dataframeexternal")
+#     return additional_param_attr
 
 
 

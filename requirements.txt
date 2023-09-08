@@ -1,0 +1,15 @@
+certifi==2023.7.22
+charset-normalizer==3.2.0
+docopt==0.6.2
+et-xmlfile @ file:///home/conda/feedstock_root/build_artifacts/et_xmlfile_1674664118162/work
+idna==3.4
+numpy @ file:///D:/bld/numpy_1691056524419/work
+openpyxl==3.0.10
+pandas @ file:///D:/bld/pandas_1680107820656/work
+pipreqs==0.4.13
+python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1626286286081/work
+pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1680088766131/work
+requests==2.31.0
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1620240208055/work
+urllib3==2.0.4
+yarg==0.1.9

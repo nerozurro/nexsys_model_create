@@ -1,30 +1,15 @@
-from libs import config, json_info, read_data, recorders
-
-
 # this is a main.py file for a project
 import pandas as pd
+import ast #connvert string to dictionary
+import numpy as np
 import json
 import ast #connvert string to dictionary
 import numpy as np
-import os
-
-import pandas as pd
-import json
-import ast #connvert string to dictionary
-import numpy as np
-import os
 from calendar import monthrange
 
 import warnings
-# export_folder_path='data/wensum/'
-# hydra_csv_folder_path='./data/armenia/'
 
-# hydra_csv_folder_path='/root/.hydra/data/botswana/'
-
-
-# pathDB = r'C:\Leonardo\ManchesterUniversity\Projects\Wensum\data_base\pywr_network_database_xls_V1.19.7_Wensum.xlsm'
-
-# default_location = [25.92491276, -24.70064353]
+from libs import config, json_info, read_data, recorders, globals
 
 
 
@@ -35,7 +20,7 @@ def main():
     print("STARTING CONVERSION FROM XLS TO JSON")
     
     
-    # config.global_tracking_variables()
+    globals.global_tracking_variables()
     
     '''get path of xls file'''
     pathDB, export_folder_path, hydra_csv_folder_path = config.update_paths()
@@ -69,9 +54,19 @@ def main():
     
     print('Writting to json file')
     network_pywr = json_info.initialize_json(pathDB)
+    
+    '''Create scenarios if any'''
+    globals.is_scenario = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 3,usecols = 'O', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+    globals.is_scenario = True if globals.is_scenario.lower()=='yes' else False
+    
+    if globals.is_scenario == True:
+        print('Creating Scenarios')
+        network_pywr['scenarios'] = json_info.create_scenarios(pathDB)
+    else: print('No Scenarios included in the network')
 
     print('Creating Nodes')
     network_pywr = json_info.node_creation(data, net_comp, network_pywr)
+    # network_pywr = json_info.node_creation(data, net_comp, network_pywr)
     
     df_recorders_nodes, df_recorders_parameters, df_recorders_extras = recorders.split_df_recorders(data['df_recorders'])
     
@@ -81,7 +76,11 @@ def main():
     network_pywr = json_info.set_locations(data['df_Network_Components'], network_pywr)
     
     print('Creating Edges')
+    print('')
     network_pywr['edges'] = json_info.create_edges(data['df_Network'])
+    
+    
+
     
     print("pruning json file, removing extra constructors")
     network_pywr = json_info.pruning(network_pywr)

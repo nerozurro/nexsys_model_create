@@ -36,12 +36,12 @@ def update_paths():
     
     '''Still to define how to read file Path'''
     script = os.getcwd()
-    pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\excel formatting\pywr_network_database_xls_V1.30.22_Botswana.xlsm'
+    pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\excel formatting\pywr_network_database_xls_V1.31.22_Botswana.xlsm'
     
     # hydra_csv_folder_path will contain the url of the parameters. local path if run locally, Hydra path if run in Hydra
-    '''url path to be used in dataframes: O-3'''
+    '''url path to be used in dataframes: O-2'''
     try:
-        globals.hydra_csv_folder_path = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'O', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
+        globals.hydra_csv_folder_path = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'O', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
         print('url path to be used in dataframes:')
         
     except:
@@ -78,7 +78,6 @@ def define_main_sources(pathDB):
     returns a dict with the sheet name, rows 2 skip [integer] in the xls and columns to use [A-Z]
     '''
     '''Cell C4 contains the name of the Network to use (Network_components Sheet)'''
-    # main_sheets = ['Network_Components', 'attribute_selection', 'extra_parameters', 'recorders']
     
     main_sheets_dict = {}
         
@@ -109,7 +108,7 @@ def define_main_sources(pathDB):
 
 def define_data_sources(pathDB,sheets_dict):
     '''
-    input str path and reads 'read_sheet' toknow what sheets will be used in json creation
+    input str path and reads 'read_sheet' to know what sheets will be used in json creation
     returns a dict with the sheet name, rows 2 skip [integer] in the xls and columns to use [A-Z]
     '''
     
@@ -136,31 +135,7 @@ def define_data_sources(pathDB,sheets_dict):
   
     return sheets_dict
 
-# def define_sources_old(pathDB):
-#     '''
-#     input str path and reads 'read_sheet' toknow what sheets will be used in json creation
-#     returns a dict with the sheet name, rows 2 skip [integer] in the xls and columns to use [A-Z]
-#     '''
-#     df_sheets_dict = pd.read_excel(pathDB, sheet_name='read_sheets',
-#                                skiprows = 4,
-#                                usecols = 'C:G')
-    
-#     df_sheets_dict = df_sheets_dict[df_sheets_dict['SHEET NAME'].notna()]
-#     df_sheets_dict = df_sheets_dict[df_sheets_dict['INCLUDE']=="YES"]
-#     df_sheets_dict.reset_index(inplace=True, drop=True)
-#     df_sheets_dict['ROW HEADER'].fillna(5, inplace=True)
-#     df_sheets_dict['FIRST COLUMN'].fillna('A', inplace=True)
-#     df_sheets_dict['LAST COLUMN'].fillna('Z', inplace=True)
-    
-#     sheets_dict = {}
 
-#     for index, row in df_sheets_dict.iterrows():
-        
-#         sheets_dict[row['SHEET NAME']]={}
-#         sheets_dict[row['SHEET NAME']]['rows2skip'] = int(row['ROW HEADER'])-1
-#         sheets_dict[row['SHEET NAME']]['cols2use'] = row['FIRST COLUMN']+":"+row['LAST COLUMN']
-  
-#     return sheets_dict
 
 def UOM(pathDB):
     '''
@@ -177,7 +152,7 @@ def UOM(pathDB):
     UOM_table.reset_index(inplace=True, drop=True)
 
     # UOM_selected = pd.read_excel(pathDB,sheet_name='Configuration',skiprows = 7,nrows=10 ,usecols = 'C:D', header=None, names=['measurement', 'unit'])
-    UOM_target   = pd.read_excel(pathDB,sheet_name='Configuration',skiprows = 7,nrows=10 ,usecols = 'C,I', header=None, names=['measurement', 'unit'])
+    UOM_target   = pd.read_excel(pathDB,sheet_name='Configuration',skiprows = 7,nrows=10 ,usecols = 'C,D', header=None, names=['measurement', 'unit'])
     UOM_target.dropna(how='any', inplace=True)
     UOM_target.reset_index(inplace=True, drop=True)
     
