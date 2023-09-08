@@ -99,9 +99,11 @@ def createParameter(node_info, param_row, data):
 
 
 def create_extra_parameters(network_pywr, df_extra_parameters):
+    
     df_extra_parameters_ = df_extra_parameters.copy()
-    df_extra_parameters_=df_extra_parameters_[df_extra_parameters_['Value'].notna()]
-    df_extra_parameters_=df_extra_parameters_[df_extra_parameters_['Parameter Type'].notna()]
+    
+    df_extra_parameters_ = df_extra_parameters_[df_extra_parameters_['Value'].notna()]
+    df_extra_parameters_ = df_extra_parameters_[df_extra_parameters_['Parameter Type'].notna()]
     df_extra_parameters_.reset_index(inplace=True, drop=True)
     param_not_included = []
 
@@ -118,6 +120,8 @@ def create_extra_parameters(network_pywr, df_extra_parameters):
         for index, row in actual_parameter_df.iterrows():
 
             name_attr = row['Parameter Attributes']
+            
+            # if value ------
             data_attr = row['Value']
 
             try:
@@ -136,7 +140,8 @@ def create_extra_parameters(network_pywr, df_extra_parameters):
                     data_attr = apply_conversions.transform_value_type(data_attr, 'none')
                 except:
                     pass
-
+            
+            # end if value ------
 
             param_dict[actual_parameter][name_attr]=data_attr
 
@@ -147,9 +152,11 @@ def create_extra_parameters(network_pywr, df_extra_parameters):
             print(f"NO Existe el parametro {actual_parameter}")
             param_not_included.append(actual_parameter)
 
+    print(f"parameters defined but not included in network: {param_not_included}")
+    
     return network_pywr, param_not_included
 
-    print(f"parameters defined but not included in network: {param_not_included}")
+    
     
     
     
@@ -370,7 +377,7 @@ def completeMonthlyProfileParameter(this_node_info, this_param_row, data):
 
 #         print(f"Created Monthly profile for {this_node_info['node_source']}")
     except:
-        print(f"ERROR when trying to read 1 column from xls sheet: {columna[0]} for creating parameter {this_node_info['node_source']}")
+        print(f"ERROR when trying to read some column from xls sheet for creating parameter {this_node_info['node_source']}")
     
     # INSERT COMMENTS UNITS
     try:

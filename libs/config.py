@@ -91,7 +91,7 @@ def define_main_sources(pathDB):
     
     main_sheets_dict['extra_parameters'] = {}
     main_sheets_dict['extra_parameters']['rows2skip'] = 4
-    main_sheets_dict['extra_parameters']['cols2use'] = "B:H"
+    main_sheets_dict['extra_parameters']['cols2use'] = "B:J"
     
     main_sheets_dict['recorders'] = {}
     main_sheets_dict['recorders']['rows2skip'] = 4

@@ -144,3 +144,29 @@ def read_data(pathDB, sheets_dict):
             print("Warning: It was not possible to read the sheet: ", {this_sheet})
         
     return data, dict_df_units
+
+
+
+
+
+def read_value(data_attr, row):
+    
+    try:
+        data_attr = apply_conversions.verify_value_type(data_attr)
+    except:
+        # print(f"No bool value transformation done for {actual_parameter} -> {row['Parameter Attributes']}")
+        print(f"No bool value transformation done for -> {row['Parameter Attributes']}")
+
+    if row.notnull()['function_special']:
+        print(f"user wants to use function {row['function_special']} on {row['Parameter Attributes']} for parameter {row['Parameter Name']}")
+        try:
+            data_attr = apply_conversions.transform_value_type(data_attr, row['function_special'])
+        except:
+            print(f"ERROR: function {row['function_special']} not recognized")
+    else:
+        try:
+            data_attr = apply_conversions.transform_value_type(data_attr, 'none')
+        except:
+            pass
+        
+    return data_attr

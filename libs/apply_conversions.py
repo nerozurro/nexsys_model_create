@@ -1,6 +1,7 @@
 import pandas as pd
 import ast #connvert string to dictionary
 from calendar import monthrange
+from libs import globals
 
 def monthly_days():
     # Create dataframe with days per month. Globar variables
