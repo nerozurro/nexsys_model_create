@@ -36,7 +36,7 @@ def update_paths():
     
     '''Still to define how to read file Path'''
     script = os.getcwd()
-    pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\excel formatting\pywr_network_database_xls_V1.31.22_Botswana.xlsm'
+    pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\excel formatting\pywr_network_database_xls_V1.33.xlsm'
     
     # hydra_csv_folder_path will contain the url of the parameters. local path if run locally, Hydra path if run in Hydra
     '''url path to be used in dataframes: O-2'''
@@ -113,19 +113,26 @@ def define_data_sources(pathDB,sheets_dict):
     '''
     
     
-    df_sheets_dict = pd.read_excel(pathDB, 
+    df_sheets_dict1 = pd.read_excel(pathDB, 
                                    sheet_name='attribute_selection',
                                    skiprows = 4,
                                    usecols = 'I:J')
     
-    df_sheets_dict = pd.DataFrame(np.concatenate([df_sheets_dict.SourceSheet1.values,df_sheets_dict.SourceSheet2.values]))
+    df_sheets_dict2 = pd.read_excel(pathDB, 
+                                   sheet_name='extra_parameters',
+                                   skiprows = 4,
+                                   usecols = 'I')
+    
+    df_sheets_dict = pd.DataFrame(np.concatenate([df_sheets_dict1.SourceSheet1.values,df_sheets_dict1.SourceSheet2.values, df_sheets_dict2.SourceSheet.values]))
     df_sheets_dict.columns = ['SHEET NAME']
+    
+    del df_sheets_dict1, df_sheets_dict2
     
     df_sheets_dict.reset_index(inplace=True, drop=True)
     df_sheets_dict = df_sheets_dict[df_sheets_dict['SHEET NAME'].notna()]
     df_sheets_dict.drop_duplicates(subset=['SHEET NAME'], keep='first', inplace=True)
     df_sheets_dict.reset_index(inplace=True, drop=True)
- 
+     
 
     for index, row in df_sheets_dict.iterrows():
         

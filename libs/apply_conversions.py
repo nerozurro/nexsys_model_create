@@ -173,12 +173,13 @@ def table_cnv_month2daily(this_df_monthly):
     This function is called from monthlyprofile.
     get dataframe with monthly values and return dataframe with daily values (average per day)
     '''  
+    
     for thismonthdays in df_days_month:
-        
+    
         actual_month=thismonthdays
         number_days=int(df_days_month[thismonthdays][0])
         this_df_monthly[actual_month] = this_df_monthly[[actual_month]]/number_days
-        
+                
     return this_df_monthly
 
 
@@ -284,7 +285,7 @@ def transform_value_type(constant_value, function_special='none', lform='.6e'):
             if constant_value2.is_integer(): constant_value2=int(constant_value2)
             
         except: # ADD WARNING
-            print(f"Can Not Transform value {constant_value}")
+            # print(f"Can Not Transform value {constant_value}")
             pass
         
         constant_value = constant_value2

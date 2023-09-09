@@ -33,7 +33,7 @@ def main():
     sheets_dict = config.define_main_sources(pathDB)
     sheets_dict = config.define_data_sources(pathDB,sheets_dict)
     
-    print(f"Information of sheets to read: {sheets_dict}")
+    # print(f"Information of sheets to read: {sheets_dict}")
      
     
     

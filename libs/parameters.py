@@ -1,6 +1,6 @@
 import pandas as pd
 
-from libs import apply_conversions, config, globals
+from libs import apply_conversions, config, globals, read_data
 
         
         
@@ -97,67 +97,96 @@ def createParameter(node_info, param_row, data):
     return parameter
 
 
-
-def create_extra_parameters(network_pywr, df_extra_parameters):
-    
+def create_extra_parameters(network_pywr, data):
+    apply_conversions.monthly_days()
+    # print(f"data.keys(), {data.keys()}")
+    df_extra_parameters = data['df_extra_parameters']
     df_extra_parameters_ = df_extra_parameters.copy()
     
-    df_extra_parameters_ = df_extra_parameters_[df_extra_parameters_['Value'].notna()]
+    # Filter out rows (attributes) with no data in Value column or SourceSheet
+    
     df_extra_parameters_ = df_extra_parameters_[df_extra_parameters_['Parameter Type'].notna()]
+    df_extra_parameters_ = df_extra_parameters_[df_extra_parameters_['Value'].notna() | df_extra_parameters_['SourceSheet'].notna()]
     df_extra_parameters_.reset_index(inplace=True, drop=True)
+    
+    # print(df_extra_parameters_)
     param_not_included = []
 
+    
     extra_parameters_list = list(df_extra_parameters_['Parameter Name'].unique())
     extra_parameters_list
 
-    for actual_parameter in extra_parameters_list:
+    for actual_parameter in extra_parameters_list: # iterates over each parameter for the current Node
         actual_parameter_df = df_extra_parameters_[df_extra_parameters_['Parameter Name']==actual_parameter]
         actual_parameter_df.reset_index(inplace=True, drop=True)
 
         param_dict = {}
         param_dict[actual_parameter]={}
 
-        for index, row in actual_parameter_df.iterrows():
+        for index, row in actual_parameter_df.iterrows(): # iterates over attributes of each parameter
 
             name_attr = row['Parameter Attributes']
             
-            # if value ------
-            data_attr = row['Value']
+            if row.notnull()['Value']: # First Priority If 'Value' Column is filled
+                data_attr = row['Value']
+                data_attr = read_data.read_value(data_attr, row)     
 
-            try:
-                data_attr = apply_conversions.verify_value_type(data_attr)
-            except:
-                print(f"No bool value transformation done for {actual_parameter} -> {name_attr}")
 
-            if row.notnull()['function_special']:
-                print(f"user wants to use function {row['function_special']} on {row['Parameter Attributes']} for parameter {row['Parameter Name']}")
+
+            elif row.notnull()['SourceSheet']:  # Second Priority If 'SourceSheet' Column is filled
+                
+                
                 try:
-                    data_attr = apply_conversions.transform_value_type(data_attr, row['function_special'])
-                except:
-                    print(f"ERROR: function {row['function_special']} not recognized")
-            else:
-                try:
-                    data_attr = apply_conversions.transform_value_type(data_attr, 'none')
-                except:
-                    pass
-            
-            # end if value ------
+                    source_df = data[str('df_'+row['SourceSheet'])]  # ASSIGN DATAFRAME ACCORDING TO THE SEEHT NAME
+                                
+                    if (row.notnull()['SourceSheet'] & row.notnull()['Column']): # If selected source annd column (Value or vertical list)
 
+                        try: # Filter data from source sheet and column
+                            source_df = source_df[['Node', row['Column']]]
+                            source_df = source_df[source_df['Node']==row['Node Source']]
+                            
+                            if len(source_df)==0: # Empty DF
+                                print(f"ERROR: Not data found in xls Sheet {row['SourceSheet']} for column {row['Column']} aasigned to Node {row['Node Source']}")
+                            
+                            elif len(source_df)==1: # Value  
+                                data_attr = source_df.iloc[0][row['Column']]
+                                data_attr = read_data.read_value(data_attr, row) 
+
+                            else: #vertical list
+                                data_attr = source_df[row['Column']].values.tolist()
+                                data_attr = [read_data.read_value(item, row) for item in data_attr]
+                            
+                        except:
+                            print(f"ERROR:  Match between SourceSheet {row['SourceSheet']} and column {row['Column']} Wrong or not defined in extra_parameters sheet")
+                        
+                    else: # Only 'SourceSheet' has data, not 'Column'. It means Monthly profile
+
+                        source_df = source_df[source_df['Node']==row['Node Source']]
+                        source_df.reset_index(inplace=True)
+                        source_df=source_df[apply_conversions.months].T
+                        data_attr=list(source_df[0])
+                        data_attr = [apply_conversions.transform_value_type(item) for item in data_attr]
+                              
+                except:
+                    print(f"ERROR: Sheet {row['SourceSheet']} assigned in extra_parameters sheet doesnt exist in xls file")
+                
+                
             param_dict[actual_parameter][name_attr]=data_attr
+            
 
         if actual_parameter in network_pywr['parameters']:
-            print(f"Existe el parametro {actual_parameter}")
+            # print(f"Existe el parametro {actual_parameter}")
             network_pywr['parameters'][actual_parameter].update(param_dict[actual_parameter])
         else:
-            print(f"NO Existe el parametro {actual_parameter}")
+            # print(f"NO Existe el parametro {actual_parameter}")
             param_not_included.append(actual_parameter)
 
     print(f"parameters defined but not included in network: {param_not_included}")
     
     return network_pywr, param_not_included
 
-    
-    
+
+   
     
     
 
@@ -218,7 +247,7 @@ def create_constant_attributes(df_attributes_constantV, this_name, this_type, th
         try:
             itemUnits4comments=f"UOM_{row['SourceSheet1']}_{column_value}"
             prev_comment = node_constant_attribute["comment"]
-            node_constant_attribute["comment"]= f"{prev_comment}{attribute}: {globals.dict_df_units[itemUnits4comments]}   " 
+            node_constant_attribute["comment"]= f"{prev_comment}{attribute}: {read_data.dict_df_units[itemUnits4comments]}   " 
         
         except:
             itemUnits4comments=f"UOM_{row['SourceSheet1']}_{column_value}"
@@ -247,7 +276,7 @@ def create_node_parameter_names(df_attributes_paremeters, this_name, this_type, 
 
 def completeInterpolatedVolumeParameter(this_node_info, this_param_row, data):
     globals.global_tracking_variables()
-    print(f"   --> Starting Interpolated Volume Parameter for {this_param_row['ParameterName']}")   
+    # print(f"   --> Starting Interpolated Volume Parameter for {this_param_row['ParameterName']}")   
     
     try:
 
@@ -282,7 +311,7 @@ def completeInterpolatedVolumeParameter(this_node_info, this_param_row, data):
     try:
         itemUnits4comments1=f"UOM_{this_param_row['SourceSheet1']}_{column_source1}"
         itemUnits4comments2=f"UOM_{this_param_row['SourceSheet1']}_{column_source2}"
-        additional_param_attr["comment"]= f"volumes: {globals.dict_df_units[itemUnits4comments1]}, values:  {globals.dict_df_units[itemUnits4comments2]}" 
+        additional_param_attr["comment"]= f"volumes: {read_data.dict_df_units[itemUnits4comments1]}, values:  {read_data.dict_df_units[itemUnits4comments2]}" 
     except:
         pass
         # print(f"No units related for {ref_name}")
@@ -298,7 +327,7 @@ def completeInterpolatedVolumeParameter(this_node_info, this_param_row, data):
 def completeInterpolatedFlowParameter(this_node_info, this_param_row, data):
     
     globals.global_tracking_variables()
-    print(f"   --> Starting Interpolated Flow Parameter for {this_param_row['ParameterName']}")   
+    # print(f"   --> Starting Interpolated Flow Parameter for {this_param_row['ParameterName']}")   
     
     try:
         df_source = str("df_")+this_param_row['SourceSheet1']
@@ -332,7 +361,7 @@ def completeInterpolatedFlowParameter(this_node_info, this_param_row, data):
     try:
         itemUnits4comments1=f"UOM_{this_param_row['SourceSheet1']}_{column_source1}"
         itemUnits4comments2=f"UOM_{this_param_row['SourceSheet1']}_{column_source2}"
-        additional_param_attr["comment"]= f"flows: {globals.dict_df_units[itemUnits4comments1]}, values:  {globals.dict_df_units[itemUnits4comments2]}" 
+        additional_param_attr["comment"]= f"flows: {read_data.dict_df_units[itemUnits4comments1]}, values:  {read_data.dict_df_units[itemUnits4comments2]}" 
     except:
         pass
         # print(f"No units related for {ref_name}")
@@ -348,14 +377,14 @@ def completeInterpolatedFlowParameter(this_node_info, this_param_row, data):
 def completeMonthlyProfileParameter(this_node_info, this_param_row, data):
     
     globals.global_tracking_variables()
-    print(f"   --> Starting MonthlyProfile Parameter for {this_param_row['ParameterName']}")   
+    # print(f"   --> Starting MonthlyProfile Parameter for {this_param_row['ParameterName']}")   
     
     try:
         df_source = str("df_")+this_param_row['SourceSheet1']
         df_source = data[str(df_source)]
         ref_name = this_node_info['node_source']
 
-        print(f"____CREATING MonthlyProfileParameter for {ref_name} _____ ")
+        # print(f"____CREATING MonthlyProfileParameter for {ref_name} _____ ")
     except:
         print(f"ERROR: MonthlyProfileParameter Can not retrieve dataframe source or column information to create {this_param_row['ParameterName']}")
     
@@ -381,8 +410,10 @@ def completeMonthlyProfileParameter(this_node_info, this_param_row, data):
     
     # INSERT COMMENTS UNITS
     try:
+        # print(this_param_row)
         keyUnits4comments=f"UOM_{this_param_row['SourceSheet1']}"
-        additional_param_attr["comment"]= f"units: {globals.dict_df_units[keyUnits4comments]}" 
+        # print(read_data.dict_df_units)
+        additional_param_attr["comment"]= f"units: {read_data.dict_df_units[keyUnits4comments]}" 
     except:
         print("can not include Monthly profile units in comments")
         
@@ -395,7 +426,7 @@ def completeMonthlyProfileParameter(this_node_info, this_param_row, data):
 def completeDataFrameParameter(this_node_info, this_param_row, data):
     
     globals.global_tracking_variables()
-    print(f"   --> Starting DataFrameParameter for {this_param_row['ParameterName']}") 
+    # print(f"   --> Starting DataFrameParameter for {this_param_row['ParameterName']}") 
     additional_param_attr={}
 #     try:
 #     print(this_param_row)
@@ -427,7 +458,7 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
     
     try:
         keyUnits4comments=f"UOM_{this_param_row['SourceSheet1']}"
-        additional_param_attr["comment"]= f"units: {globals.dict_df_units[keyUnits4comments]}" 
+        additional_param_attr["comment"]= f"units: {read_data.dict_df_units[keyUnits4comments]}" 
     except:
         print("can not include dataframe units")
       
@@ -435,7 +466,8 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
     df_origin_type = this_param_row['Dataframe Type']
     
     if file_name in globals.dict_dataframeparameter[df_origin_type]:
-        print(f"          {file_name} already exist in DF Dictionary")
+        print("")
+        # print(f"          {file_name} already exist in DF Dictionary")
     
     else:
         print(f"{file_name} will be created in DF Dictionary")
@@ -444,7 +476,7 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
         df_source = data[str(df_source)]
 
         if this_param_row['Dataframe Type'] == 'Time Series pivoted':
-            print(this_param_row)
+            # print(this_param_row)
             globals()[file_name] = df_source[['timestep', this_param_row['Column1']]]
         
         else:
@@ -468,7 +500,7 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
 def completeDataFrameParameterExternal(this_node_info, this_param_row):
     globals.global_tracking_variables()
     
-    print(f"   --> Starting External DataFrameParameter for {this_param_row['ParameterName']}") 
+    # print(f"   --> Starting External DataFrameParameter for {this_param_row['ParameterName']}") 
     additional_param_attr={}
     
     file_name = this_param_row['SourceSheet1']               
@@ -504,24 +536,7 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     additional_param_attr["index_col"]= 0
     additional_param_attr["parse_dates"]= True
     
-    print('')
-    print('this_param_row', this_param_row)
-    print('')
     
-    # if 'DataFrame scenario' in this_param_row.columns:
-    # if this_param_row.notnull()['DataFrame scenario']:  
-    #     '''
-    #     If build in scenarios and both columns on excel file are filled
-    #     '''
-    #     additional_param_attr["key"] = this_param_row['DataFrame key']
-    #     additional_param_attr["key"] = this_node_info['node_source'] # Comment this line if printing NaN
-    #     additional_param_attr["scenario"]= this_param_row['DataFrame scenario']
-        
-    #     try:
-    #         # Temporal development, in case column attribute has been created
-    #         del additional_param_attr["column"]
-    #     except:
-    #         pass
 
       
     # Construct dictionary for later dataframes creation:
@@ -531,7 +546,10 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     # print(f"df_origin_type {df_origin_type}")
     
     if file_name in globals.dict_dataframeparameter[df_origin_type]:
-        print(f"          {file_name} already exist in DF Dictionary")
+        # print("")
+        # print(f"          {file_name} already exist in DF Dictionary")
+        pass
+        
     else:
         # print(f"{file_name} will be created in DF Dictionary")
         globals.dict_dataframeparameter[df_origin_type][file_name]=[]
@@ -542,69 +560,6 @@ def completeDataFrameParameterExternal(this_node_info, this_param_row):
     return additional_param_attr
 
 
-
-# def old_completeDataFrameParameterExternal(this_node_info, this_param_row):
-#     globals.global_tracking_variables()
-    
-#     print(f"   --> Starting External DataFrameParameter for {this_param_row['ParameterName']}") 
-#     additional_param_attr={}
-    
-#     file_name = this_param_row['SourceSheet1']               
-#     ref_name = this_param_row['Node name']
-    
-#     additional_param_attr["url"]= f"{globals.hydra_csv_folder_path}{file_name}"
-    
-    
-    
-#     if globals.is_scenario == True:
-#         additional_param_attr["scenario"]= globals.scenarios_name
-#     else:
-#         if this_param_row.notnull()['Column1']:
-#             additional_param_attr["column"]= this_param_row['Column1']
-#         else:
-#             additional_param_attr["column"]= this_node_info['node_source']
-        
-        
-# #     additional_param_attr["index_col"]= "Date"
-#     additional_param_attr["index_col"]= 0
-#     additional_param_attr["parse_dates"]= True
-    
-#     print('')
-#     print('this_param_row', this_param_row)
-#     print('')
-    
-#     # if 'DataFrame scenario' in this_param_row.columns:
-#     if this_param_row.notnull()['DataFrame scenario']:  
-#         '''
-#         If build in scenarios and both columns on excel file are filled
-#         '''
-#         additional_param_attr["key"] = this_param_row['DataFrame key']
-#         additional_param_attr["key"] = this_node_info['node_source'] # Comment this line if printing NaN
-#         additional_param_attr["scenario"]= this_param_row['DataFrame scenario']
-        
-#         try:
-#             # Temporal development, in case column attribute has been created
-#             del additional_param_attr["column"]
-#         except:
-#             pass
-
-      
-#     # Construct dictionary for later dataframes creation:
-#     df_origin_type = "External DataFrame"
-
-#     # print(f"dict_dataframeparameter {globals.dict_dataframeparameter}")
-#     # print(f"df_origin_type {df_origin_type}")
-    
-#     if file_name in globals.dict_dataframeparameter[df_origin_type]:
-#         print(f"          {file_name} already exist in DF Dictionary")
-#     else:
-#         # print(f"{file_name} will be created in DF Dictionary")
-#         globals.dict_dataframeparameter[df_origin_type][file_name]=[]
-# #         print(f"df_source {df_source}")
-    
-#     globals.dict_dataframeparameter[df_origin_type][file_name].append(ref_name)   
-#     # print("finished dataframeexternal")
-#     return additional_param_attr
 
 
 
@@ -623,7 +578,7 @@ def customAggregatedParameter(this_param_name, this_func, param_list):
 def completeControlCurveInterpolatedParameter(this_node_info, this_param_row, data):
     
     globals.global_tracking_variables()
-    print(f"   --> Starting Control Curve Interpolated Volume Parameter for {this_param_row['ParameterName']}") 
+    # print(f"   --> Starting Control Curve Interpolated Volume Parameter for {this_param_row['ParameterName']}") 
     
     try:
         
@@ -637,7 +592,7 @@ def completeControlCurveInterpolatedParameter(this_node_info, this_param_row, da
         df_source = df_source.dropna()
         df_source = df_source[df_source['Node']==ref_name] 
         df_source.reset_index(inplace=True, drop=True)
-        print(f"____CREATING ControlCurveInterpolatedParameter for {ref_name} _____ ")
+        # print(f"____CREATING ControlCurveInterpolatedParameter for {ref_name} _____ ")
     
     except:
         print(f"Error: ControlCurveInterpolatedParameter Can not retrieve dataframe source or columns information to create {this_param_row['ParameterName']}")

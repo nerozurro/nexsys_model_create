@@ -2,6 +2,8 @@ import pandas as pd
 
 from libs import apply_conversions, config
     
+
+    
     
 def read_data(pathDB, sheets_dict):    
     
@@ -14,6 +16,8 @@ def read_data(pathDB, sheets_dict):
     
     apply_conversions.monthly_days() # Create a dict with the number of days per month. global variables
     # global_tracking_variables()
+    
+    global list_dataframes, dict_df_units
     
     list_dataframes = [] # List to track all dataframes created
     list_units=[]
@@ -155,10 +159,11 @@ def read_value(data_attr, row):
         data_attr = apply_conversions.verify_value_type(data_attr)
     except:
         # print(f"No bool value transformation done for {actual_parameter} -> {row['Parameter Attributes']}")
-        print(f"No bool value transformation done for -> {row['Parameter Attributes']}")
+        # print(f"No bool value transformation done for -> {row['Parameter Attributes']}")
+        pass
 
     if row.notnull()['function_special']:
-        print(f"user wants to use function {row['function_special']} on {row['Parameter Attributes']} for parameter {row['Parameter Name']}")
+        # print(f"user wants to use function {row['function_special']} on {row['Parameter Attributes']} for parameter {row['Parameter Name']}")
         try:
             data_attr = apply_conversions.transform_value_type(data_attr, row['function_special'])
         except:

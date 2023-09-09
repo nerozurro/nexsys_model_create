@@ -57,45 +57,7 @@ def create_scenarios(pathDB):
     return scenarios
 
 
-# def json_scenarios_old(pathDB):  # Scenarios still to be implemented
-#     globals.global_tracking_variables()
-    
-#     # scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-    
-#     try:
-#         globals.scenarios_name = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 0,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-    
-#         if pd.isna(globals.scenarios_name):
-#             globals.scenarios_name=None
-            
-#     except:
-#         globals.scenarios_name=None
-#         # pass
-        
-#     try:
-#         scenarios_size = int(pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 1,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"])
-    
-#     except:
-#         print(f"Scenario size is not a valid value")
-#         scenarios_size = None
-    
-    
-#     try:
-#         scenarios_description = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 2,usecols = 'S', header=None,nrows=1,names=["Value"]).iloc[0]["Value"]
-#     except: scenarios_description = None
-        
-        
-#     if globals.scenarios_name!=None and scenarios_size!= None:
-#         print(f"Model will under scenario configuration")
-#         print(f"scenario name: {globals.scenarios_name} and scenario size: {scenarios_size}")
-#         globals.is_scenario = True
-    
-#     else:
-#         print(f"Model will be created without using scenarios")
-#         print(f"To create Model with scenarios, please fill the fields scenarios_name and scenarios_size in the excel file")
-#         globals.is_scenario = False
-        
-#     return globals.scenarios_name, scenarios_size, scenarios_description, globals.is_scenario
+
 
 
 def json_timestepper_start(pathDB):
@@ -116,11 +78,6 @@ def json_timestepper_timestep(pathDB):
     
     return timestepper_timestep
 
-    # comp2type_df = pd.read_excel(pathDB,sheet_name='Network_Components',skiprows = 4,usecols = 'N:O')
-    # comp2type_df.dropna(inplace=True, how='any')
-    # comp2type = {}
-    # for index, row in comp2type_df.iterrows():
-    #     comp2type[row['Node Component']]= row['Node Type']
     
 def fill_empty_locations(df_Network_Components,df_Network):
     
@@ -174,51 +131,6 @@ def fill_empty_locations(df_Network_Components,df_Network):
     
     return df_Network_Components
 
-# def fill_empty_locations_old(df_Network_Components,df_Network):
-    
-#     default_location = [df_Network_Components["location_lat"].mean(), df_Network_Components["location_long"].mean()]
-    
-#     df_empty_loc_Network_Components = df_Network_Components.copy()
-#     df_empty_loc_Network_Components = df_empty_loc_Network_Components[df_empty_loc_Network_Components['location_lat'].isna()]
-#     df_empty_loc_Network_Components.reset_index(inplace=True, drop=True)
-    
-#     for index, row in df_empty_loc_Network_Components.iterrows():
-#             nameNode = row['name']
-
-#             df_filtered = df_Network.query("StartNodeName == @nameNode or EndNodeName == @nameNode")
-#             neighbors_list = pd.melt(df_filtered, value_vars=['StartNodeName', 'EndNodeName'], ignore_index=False).value.unique()
-#             df_filtered = df_Network_Components[df_Network_Components['name'].isin(neighbors_list)].copy()
-#             df_filtered = df_filtered[df_filtered['location_lat'].notna()]
-            
-#             if len(df_filtered)==0:
-#                 # print(f"{nameNode} will have default locations")
-#                 new_lat = default_location[0] * (1 + 0.003* np.random.randint(-10,10,size=1))
-#                 new_lon = default_location[1] * (1 + 0.003* np.random.randint(-10,10,size=1))
-                
-#             elif len(df_filtered)==1:
-#                 # print(f"{nameNode} has 1 neighbor with coordinates")
-#                 new_lat = df_filtered['location_lat'].mean() * (1 + 0.0003* np.random.randint(-10,10,size=1))
-#                 new_lon = df_filtered['location_long'].mean() * (1 + 0.0003* np.random.randint(-10,10,size=1))
-                
-#             else:
-#                 # print(f"{nameNode} has more than 1 neighbor with coordinates")
-#                 new_lat = df_filtered['location_lat'].mean()
-#                 new_lon = df_filtered['location_long'].mean()
-            
-#             try: # Try to convert each item to float 3 decimals
-#                 new_lat = float(new_lat)
-#                 new_lon = float(new_lon)
-#                 new_lat = float(format(new_lat, '.4e'))
-#                 new_lon = float(format(new_lon, '.4e'))
-#             except:
-#                 pass
-            
-#             df_Network_Components.loc[df_Network_Components['name'] == nameNode,'location_lat'] = new_lat
-#             df_Network_Components.loc[df_Network_Components['name'] == nameNode,'location_long'] = new_lon
-            
-#     df_Network_Components = df_Network_Components[['Type','Status','name','Node Source','location_lat','location_long']]
-    
-#     return df_Network_Components
     
     
     
@@ -418,7 +330,7 @@ def node_creation(data, net_comp, network_pywr):
         index_nodes+=1
     
     
-    network_pywr, param_not_included = parameters.create_extra_parameters(network_pywr, data['df_extra_parameters'])    
+    network_pywr, param_not_included = parameters.create_extra_parameters(network_pywr, data)    
     
     print("Please check the following parameters, they are not included in any node:\n", param_not_included)
     

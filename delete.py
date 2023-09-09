@@ -16,7 +16,7 @@ def create_extra_parameters(network_pywr, data):
     
     param_not_included = []
 
-    print(df_extra_parameters_)
+    # print(df_extra_parameters_)
     
     extra_parameters_list = list(df_extra_parameters_['Parameter Name'].unique())
     extra_parameters_list
@@ -74,23 +74,18 @@ def create_extra_parameters(network_pywr, data):
                 except:
                     print(f"ERROR: Sheet {row['SourceSheet']} assigned in extra_parameters sheet doesnt exist in xls file")
                 
-                
-                print("WHATT!!!!")
-                print(data_attr)
+
                 param_dict[actual_parameter][name_attr]=data_attr
-                
-                # -- End elif SourceSheet notnull------
-            
             
 
         if actual_parameter in network_pywr['parameters']:
-            print(f"Existe el parametro {actual_parameter}")
+            # print(f"Existe el parametro {actual_parameter}")
             network_pywr['parameters'][actual_parameter].update(param_dict[actual_parameter])
         else:
-            print(f"NO Existe el parametro {actual_parameter}")
+            # print(f"NO Existe el parametro {actual_parameter}")
             param_not_included.append(actual_parameter)
 
-    print(f"parameters defined but not included in network: {param_not_included}")
+    # print(f"parameters defined but not included in network: {param_not_included}")
     
     return network_pywr, param_not_included
 
