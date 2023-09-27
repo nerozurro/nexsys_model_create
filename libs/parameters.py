@@ -67,7 +67,7 @@ def createParameter(node_info, param_row, data):
         parameter[param_row['ParameterName']]['type']=param_row['Parameter Type']
         
         
-    elif (param_row['Parameter Type'] == 'DataFrameParameter External'):       # TYPE DataFrameParameter from external csv
+    elif (param_row['Parameter Type'] == 'DataFrameParameter_External'):       # TYPE DataFrameParameter from external csv
         # print("    ........Chosen DataFrameParameter........")
         
         parameter[param_row['ParameterName']]={}

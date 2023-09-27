@@ -443,7 +443,7 @@ def set_locations(df_Network_Components, network_pywr):
     locs_df = df_Network_Components.copy()
     locs_df = locs_df[locs_df['location_lat'].notna()]
     locs_df = locs_df[locs_df['location_long'].notna()]
-    default_location = [locs_df["location_lat"].mean(), locs_df["location_long"].mean()]
+    default_location = [locs_df["location_long"].mean(), locs_df["location_lat"].mean()]
     
     try:
         locs_df['location_lat'] = locs_df['location_lat'].apply(lambda x: float(format(float(x), '.5e')))
@@ -459,7 +459,7 @@ def set_locations(df_Network_Components, network_pywr):
             if _nodes['name']==row['name']:
                 
                 _nodes["position"]={}
-                _nodes["position"]['geographic']=[row['location_lat'],row['location_long']]
+                _nodes["position"]['geographic']=[row['location_long'], row['location_lat']]
                 network_pywr.update(_nodes)
                 geolocation_updated=1
 
