@@ -37,7 +37,8 @@ def update_paths():
     '''Still to define how to read file Path'''
     script = os.getcwd()
     # pathDB = r'C:\Leonardo\ManchesterUniversity\general_scripts\excel formatting\pywr_network_database_xls_V1.33.xlsm'
-    pathDB = r'C:\Leonardo\ManchesterUniversity\Projects\Ethiopia\Development\model\database\Ethiopia_pywr_create_network_xls_V0.1.xlsm'
+    # pathDB = r'C:\Leonardo\ManchesterUniversity\Projects\Ethiopia\Development\model\database\Ethiopia_pywr_create_network_xls_V0.1.xlsm'
+    pathDB = r'C:\Leonardo\ManchesterUniversity\Tutorial\Test\Botswana_pywr_create_network_xls_V0.1.xlsm'
     
     # hydra_csv_folder_path will contain the url of the parameters. local path if run locally, Hydra path if run in Hydra
     '''url path to be used in dataframes: O-2'''

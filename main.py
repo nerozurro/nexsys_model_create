@@ -1,9 +1,8 @@
 # this is a main.py file for a project
 import pandas as pd
-import ast #connvert string to dictionary
+import ast #convert string to dictionary
 import numpy as np
 import json
-import ast #connvert string to dictionary
 import numpy as np
 from calendar import monthrange
 

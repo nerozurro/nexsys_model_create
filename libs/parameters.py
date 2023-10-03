@@ -180,8 +180,8 @@ def create_extra_parameters(network_pywr, data):
         else:
             # print(f"NO Existe el parametro {actual_parameter}")
             param_not_included.append(actual_parameter)
-
-    print(f"parameters defined but not included in network: {param_not_included}")
+    print("")
+    # print(f"parameters defined but not included in network: {param_not_included}")
     
     return network_pywr, param_not_included
 
@@ -225,8 +225,13 @@ def create_constant_attributes(df_attributes_constantV, this_name, this_type, th
         df_source_Value = df_source_Value[df_source_Value['Node']==this_source]
         # print(f"column_value{column_value}")
         # print(f"df_source_Value{df_source_Value}")
-        constant_value = df_source_Value[column_value].item()
-        
+        try:
+            constant_value = df_source_Value[column_value].item()
+        except Exception as e: 
+            print(f"ERROR: Trying to access value {column_value} for {str(this_source)}")
+            print(e)
+            break
+            
         
         try:
             constant_value = apply_conversions.verify_value_type(constant_value)

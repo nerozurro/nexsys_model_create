@@ -302,9 +302,9 @@ def node_creation(data, net_comp, network_pywr):
     index_nodes=0
     for index, row in net_comp.iterrows():
     #     print(f"comp2type {comp2type[row['CompType']], row['CompType']}")
+        print("Creating Node: ", row['CompName'])
         
         node_created, df_attributes_paremeters, df_manual_parameters = createNode(row['CompName'], row['CompType'], data)
-        
         node_created_copy = node_created.copy()
         
         # print(f"     ######################################################################")
@@ -332,7 +332,7 @@ def node_creation(data, net_comp, network_pywr):
     
     network_pywr, param_not_included = parameters.create_extra_parameters(network_pywr, data)    
     
-    print("Please check the following parameters, they are not included in any node:\n", param_not_included)
+    # print("Please check the following parameters, they are not included in any node:\n", param_not_included)
     
     
     return network_pywr
