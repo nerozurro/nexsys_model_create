@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 
 from libs import apply_conversions, config, globals, read_data
 
@@ -45,6 +46,19 @@ def createParameter(node_info, param_row, data):
         parameter[param_row['ParameterName']]['node_source']=param_row['Node name']
         parameter[param_row['ParameterName']]['type']=param_row['Parameter Type']
         
+    elif (param_row['Parameter Type'] == 'ControlCurveInterpolatedParameter'):       # TYPE DataFrameParameter from external csv
+       
+        
+        param_func=completeControlCurveInterpolatedParameter
+        get_parameter_attributes[param_row['ParameterName']], _ = param_func(node_info, param_row, data)
+        parameter.update(get_parameter_attributes)
+        print(f"get_parameter_attributes, {get_parameter_attributes}")
+        print(f"param_row['Node name'], {param_row['Node name']}")
+        print(f"parameter, {parameter}")
+        
+        parameter[param_row['ParameterName']]['node_source']=param_row['Node name']
+        parameter[param_row['ParameterName']]['type']=param_row['Parameter Type']
+        
         
     elif (param_row['Parameter Type'] == 'MonthlyProfileParameter'):           # TYPE MonthlyProfile
         # print("    ........Chosen MonthlyProfileParameter........")
@@ -78,7 +92,7 @@ def createParameter(node_info, param_row, data):
         parameter[param_row['ParameterName']]['type']='DataFrameParameter'   
              
 
-    elif (param_row['Parameter Type'] == 'Aggregated'):
+    elif (param_row['Parameter Type'] == 'aggregated'):
         
         parameter[param_row['ParameterName']]['type']='aggregated'
         parameter[param_row['ParameterName']]['type']='AggregatedParameter'
@@ -88,6 +102,9 @@ def createParameter(node_info, param_row, data):
             parameter[param_row['ParameterName']]['parameters'] = apply_conversions.transform_value_type(param_row['Column1'], 'to_list')
         except:
             print(f"ERROR: creating aggregated list {param_row['attributes']}")
+            
+            
+    
         
     else:
         print(f"Creating empty slot for Parameter: {param_row['ParameterName']}")
@@ -170,8 +187,13 @@ def create_extra_parameters(network_pywr, data):
                 except:
                     print(f"ERROR: Sheet {row['SourceSheet']} assigned in extra_parameters sheet doesnt exist in xls file")
                 
-                
-            param_dict[actual_parameter][name_attr]=data_attr
+            try:
+                param_dict[actual_parameter][name_attr]=data_attr                
+            except Exception as e: 
+                print(f"ERROR: Trying to access value {data_attr} for {str(actual_parameter)}")
+                print(e)
+                break   
+            
             
 
         if actual_parameter in network_pywr['parameters']:
@@ -230,7 +252,7 @@ def create_constant_attributes(df_attributes_constantV, this_name, this_type, th
         except Exception as e: 
             print(f"ERROR: Trying to access value {column_value} for {str(this_source)}")
             print(e)
-            break
+            sys.exit(1)
             
         
         try:
@@ -445,9 +467,13 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
     
     if this_param_row['Dataframe Type'] == 'Time Series pivoted':
         file_name = sheet_name
+        
+    elif this_param_row['Dataframe Type'] == 'Time Series':
+        file_name = sheet_name
     
     elif this_param_row['Dataframe Type'] == 'Monthly':
         file_name = sheet_name
+        
     else: file_name = sheet_name+str('_')+this_param_row['Column1']
         
     
@@ -484,6 +510,11 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
             # print(this_param_row)
             globals()[file_name] = df_source[['timestep', this_param_row['Column1']]]
         
+        elif this_param_row['Dataframe Type'] == 'Time Series':
+            pass
+            # print(this_param_row)
+            # globals()[file_name] = df_source
+            
         else:
             
             try:
@@ -583,8 +614,8 @@ def customAggregatedParameter(this_param_name, this_func, param_list):
 def completeControlCurveInterpolatedParameter(this_node_info, this_param_row, data):
     
     globals.global_tracking_variables()
-    # print(f"   --> Starting Control Curve Interpolated Volume Parameter for {this_param_row['ParameterName']}") 
-    
+    print(f"   --> Starting Control Curve Interpolated Volume Parameter for this_param_row {this_param_row}") 
+    print(f"   --> Starting Control Curve Interpolated Volume Parameter for this_node_info {this_node_info}")
     try:
         
         # print(this_param_row)
@@ -614,8 +645,10 @@ def completeControlCurveInterpolatedParameter(this_node_info, this_param_row, da
         df_source = df_source.sort_values(column_source1, ascending=False)
         this_list=list(df_source.loc[df_source.iloc[:,0]==this_node_info['node_source']][column_source1])
         additional_param_attr['control_curves']=this_list
+        print(f"additional_param_attr['control_curves'], {additional_param_attr['control_curves']}")
         this_list=list(df_source.loc[df_source.iloc[:,0]==this_node_info['node_source']][column_source2])
         additional_param_attr['values']=this_list
+        print(f"additional_param_attr['values'], {additional_param_attr['values']}")
     
     elif this_param_row['ControlCurveType']=='parameters': # This IF removes 0 and 1 from Starting Storage
         

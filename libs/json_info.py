@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import sys
 
 from libs import parameters, globals, recorders, apply_conversions
 
@@ -108,8 +109,8 @@ def fill_empty_locations(df_Network_Components,df_Network):
                 
             elif len(df_filtered)==1:
                 # print(f"{nameNode} has 1 neighbor with coordinates")
-                new_lat = df_filtered['location_lat'].mean()  + ((max_lat-min_lat)/10) * np.random.randint(-10,10,size=1) *0.1
-                new_lon = df_filtered['location_long'].mean() + ((max_lon-min_lon)/10) * np.random.randint(-10,10,size=1) *0.1
+                new_lat = df_filtered['location_lat'].mean()  + ((max_lat-min_lat)/10) * np.random.randint(-10,10,size=1) *0.03
+                new_lon = df_filtered['location_long'].mean() + ((max_lon-min_lon)/10) * np.random.randint(-10,10,size=1) *0.03
                 
             else:
                 # print(f"{nameNode} has more than 1 neighbor with coordinates")
@@ -156,8 +157,10 @@ def get_edges(pathDB, data):
     df_Network_Components = df_Network_Components[df_Network_Components['name'].notna()]
     df_Network_Components = df_Network_Components[df_Network_Components['Type'].notna()]
     df_Network_Components.reset_index(inplace=True, drop=True)
+    
     df_Network = data[str(str("df_")+df_Network)]
     df_Network = df_Network[['StartNodeName', 'EndNodeName']]
+    df_Network = df_Network.dropna()
     df_Network.reset_index(inplace=True, drop=True)
     
     return df_Network, df_Network_Components
@@ -202,14 +205,16 @@ def identify_components(this_dataframe, all_nodes):
                                    this_dataframe[['EndNodeName']].rename(columns={'EndNodeName':'CompName'})],
                                    ignore_index=True)
     
-    unique_components=unique_components.drop_duplicates().reset_index(drop=True)
-    
-#     duplicatedNames = unique_components[unique_components['CompName'].duplicated()]
-    
+    unique_components = unique_components['CompName'].dropna()
+    # unique_components = unique_components[unique_components['CompName'].notna()]
+    unique_components = unique_components.drop_duplicates().reset_index(drop=True)
+     
     unique_components=pd.merge(unique_components,all_nodes, left_on='CompName', right_on='name', how='left')  
     unique_components = unique_components.rename(columns={'Type':'CompType'})
     unique_components = unique_components[['CompName', 'CompType']]
     df_no_assignedNodes = unique_components[unique_components['CompType'].isnull()]
+    
+    # print(f"unique_components, {unique_components}")
     
     if len(df_no_assignedNodes)>0:
         print(f"ERROR: The following nodes doesnt have a Node Type Assigned:  {df_no_assignedNodes}")
@@ -274,18 +279,6 @@ def initialize_json(pathDB):
         "end": json_timestepper_end(pathDB),
         "timestep": json_timestepper_timestep(pathDB)
         }
-    
-    # globals.scenarios_name, scenarios_size, scenarios_description, globals.is_scenario = json_scenarios(pathDB)
-    
-    # if globals.is_scenario == True:
-        
-    #     network_pywr['scenarios'] = [
-    #         {                
-    #             "name": globals.scenarios_name,
-    #             "size": scenarios_size,
-    #             "comment": scenarios_description
-    #         }
-    #     ]
 
     network_pywr['nodes']=[]
     network_pywr['parameters']={}
@@ -306,10 +299,6 @@ def node_creation(data, net_comp, network_pywr):
         
         node_created, df_attributes_paremeters, df_manual_parameters = createNode(row['CompName'], row['CompType'], data)
         node_created_copy = node_created.copy()
-        
-        # print(f"     ######################################################################")
-        # print(f"     node created: {node_created}")
-        # print(f"     ######################################################################")
         
         network_pywr['nodes'].append(node_created_copy)
         
@@ -357,8 +346,14 @@ def createNode(this_name, this_type, data):
     node['name']=this_name
     node['type']=this_type
 
-
-    this_source = df_Network_Components[df_Network_Components['name']==this_name]['Node Source'].item()
+    try:
+        this_source = df_Network_Components[df_Network_Components['name']==this_name]['Node Source'].item()
+    except Exception as e: 
+        print(f"ERROR: Trying to access value {this_name} for {df_Network_Components[df_Network_Components['name']==this_name]['Node Source']}")
+        print(e)
+        sys.exit(1)
+               
+    
     
     if (this_source!=None):
         node['node_source']=this_source
@@ -503,7 +498,8 @@ def remove_constructors_info(d):
             if k not in {'node_comp','node_source', 'param_type_node'}}
     
     
-def export_dataframes():
+def export_dataframes(data):
+    print(data.keys())
     # STILL NEED TO MAKE EXPORT DATAFRAMES FOR COLUMNS ONLY REQUESTED
 
     for df_type_actual in globals.dataframe_types_list:
@@ -513,19 +509,28 @@ def export_dataframes():
             print(f"EXPORTING csv dataframe {sheet_actual} with columns: {globals.dict_dataframeparameter[df_type_actual][sheet_actual]} ")
             
             if df_type_actual == 'Time Series pivoted':
-                dataframe2export = globals()[str("df_")+sheet_actual]
+                dataframe2export = data[str("df_")+sheet_actual]
+                # dataframe2export = globals()[str("df_")+sheet_actual]
                 
             elif df_type_actual == 'Monthly':
-                dataframe2export = globals()[str("df_")+sheet_actual]
+                dataframe2export = data[str("df_")+sheet_actual]
+                # dataframe2export = globals()[str("df_")+sheet_actual]
+                
+            elif df_type_actual == 'Time Series':
+                # dataframe2export = globals()[sheet_actual]
+                dataframe2export = data[str("df_")+sheet_actual]
+                # dataframe2export[dataframe2export['Node'].isin(globals.dict_dataframeparameter[df_type_actual][sheet_actual])]
                 
             else:
-                dataframe2export = globals()[sheet_actual]
+                # dataframe2export = globals()[sheet_actual]
+                dataframe2export = data[str("df_")+sheet_actual]
                 dataframe2export[dataframe2export['Node'].isin(globals.dict_dataframeparameter[df_type_actual][sheet_actual])]
 
 
             if df_type_actual == 'Time Series':
-                column_index = globals.dict_dataframeparameter_column['Time Series'][sheet_actual]
-                dataframe2export = apply_conversions.ts2unstack(dataframe2export, column_index)
+                pass
+                # column_index = globals.dict_dataframeparameter_column['Time Series'][sheet_actual]
+                # dataframe2export = apply_conversions.ts2unstack(dataframe2export, column_index)
 
             elif df_type_actual == 'Monthly':
                 pass

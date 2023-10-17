@@ -87,6 +87,11 @@ def main():
     json_info.export_json(network_pywr, pathDB)
 
     print("JSON CREATED")
+    
+    print("Exporting dataframes to CSV files")
+    json_info.export_dataframes(data)
+    print('Process finished')
+    
 
 if __name__ == "__main__":
     main()

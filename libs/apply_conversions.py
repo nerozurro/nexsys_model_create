@@ -158,12 +158,21 @@ def convert_units_timeseries(UOM_timeseries_columns, this_sheet, unitstoconvert,
             
             dataframetoconvert['newdate'] = pd.to_datetime(dataframetoconvert['timestep']).dt.to_period('m')
             dataframetoconvert["days"] = [monthrange(x.year, x.month)[1] for x in dataframetoconvert['newdate']]
-            dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert.loc[:, UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0)
-            dataframetoconvert.drop(columns=['days','newdate'], inplace=True)
+            
+            dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert[UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0)
+            
+            
+            
+            #dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert.loc[:, UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0)
+            # dataframetoconvert.drop(columns=['days','newdate'], inplace=True)
             print(f" ----> Converted Time '{this_sheet}' from monthly total value to average per day ('{units_from}' to '{units_to}')") 
     
     dict_df_units[f"UOM_{this_sheet}"]=units_to
     
+    print('UOM_timeseries_columns')
+    print(UOM_timeseries_columns)
+    print('dataframetoconvert')
+    print(dataframetoconvert.head(30))
     return dataframetoconvert, units_to, dict_df_units
 
    
