@@ -155,24 +155,37 @@ def convert_units_timeseries(UOM_timeseries_columns, this_sheet, unitstoconvert,
     if not units_from in['ML/Day','Mm3/Day']:
         
         if units_from in ['ML/Month', 'Mm3/Month', 'ML', 'Mm3']: #FLOW and volume
+
+            dataframetoconvert['year_month'] = pd.to_datetime(dataframetoconvert['timestep']).dt.to_period('m')
+            dataframetoconvert["days"] = [monthrange(x.year, x.month)[1] for x in dataframetoconvert['year_month']]   # get number of days per month as per calendar
+            dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert[UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0) # divide by number of days per month to get a daily average
+ 
+            month_start = dataframetoconvert['year_month'][0].strftime('%Y-%m')
+            month_end = dataframetoconvert['year_month'][len(dataframetoconvert['year_month'])-1].strftime('%Y-%m')
+
+            df = pd.DataFrame({ # Create time series freq DAILY
+                'date': pd.date_range(
+                    start = pd.Timestamp(month_start),                        
+                    end = pd.Timestamp(month_end) + pd.offsets.MonthEnd(0),  # <-- 2018-08-31 with MonthEnd
+                    freq = 'D'
+                    )
+                })
+    
+            df['year_month'] = pd.to_datetime(df['date']).dt.to_period('m') # For freq D, create column freq M
+
+            dataframetoconvert = df.merge(dataframetoconvert, on='year_month', how='left') # Merge dataframes daily average per month with daily freq. Assigning 1 value per day in dates range
+
+            dataframetoconvert.drop(columns=['days','year_month', 'timestep'], inplace=True) 
+            dataframetoconvert.rename(columns={'date':'timestep'}, inplace=True)
             
-            dataframetoconvert['newdate'] = pd.to_datetime(dataframetoconvert['timestep']).dt.to_period('m')
-            dataframetoconvert["days"] = [monthrange(x.year, x.month)[1] for x in dataframetoconvert['newdate']]
+            for column in UOM_timeseries_columns:  # Reduce decimals to 6
+                dataframetoconvert[column] = dataframetoconvert[column].apply(lambda x: float(format(x, '.7e')))   
+
             
-            dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert[UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0)
-            
-            
-            
-            #dataframetoconvert[UOM_timeseries_columns] = dataframetoconvert.loc[:, UOM_timeseries_columns].div(dataframetoconvert["days"], axis=0)
-            # dataframetoconvert.drop(columns=['days','newdate'], inplace=True)
             print(f" ----> Converted Time '{this_sheet}' from monthly total value to average per day ('{units_from}' to '{units_to}')") 
     
     dict_df_units[f"UOM_{this_sheet}"]=units_to
     
-    print('UOM_timeseries_columns')
-    print(UOM_timeseries_columns)
-    print('dataframetoconvert')
-    print(dataframetoconvert.head(30))
     return dataframetoconvert, units_to, dict_df_units
 
    

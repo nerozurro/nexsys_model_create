@@ -504,7 +504,8 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
         print(f"{file_name} will be created in DF Dictionary")
         globals.dict_dataframeparameter[df_origin_type][file_name]=[]
         df_source = str("df_")+sheet_name
-        df_source = data[str(df_source)]
+        print(data.keys())
+        df_source = data[df_source]
 
         if this_param_row['Dataframe Type'] == 'Time Series pivoted':
             # print(this_param_row)
