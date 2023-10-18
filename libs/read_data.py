@@ -91,7 +91,7 @@ def read_data(pathDB, sheets_dict):
 
             # 3. timeseries: each column is node. When timeseries is inside excel file
             try:
-                print("Trying READING TIMESERIES")
+
                 UOM_timeseries = pd.read_excel(pathDB, sheet_name=this_sheet,
                                             skiprows = 4,usecols = 'CH:CJ', 
                                             names=['uom', 'units','column_name'])
@@ -101,9 +101,8 @@ def read_data(pathDB, sheets_dict):
                 UOM_timeseries_columns=UOM_timeseries_columns['column_name'].values.tolist()
                 UOM_timeseries.dropna(how='any', inplace=True)
                 UOM_timeseries.reset_index(inplace=True, drop=True)
-                print(f"HELLO, {UOM_timeseries_columns}")
+
             except:
-                print("EXCEPT Trying READING TIMESERIES")
                 UOM_timeseries = pd.DataFrame()
 
             # 4. timeseries by column. When timeseries is inside excel file
