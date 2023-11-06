@@ -66,21 +66,23 @@ def main():
     print('Creating Nodes')
     network_pywr = json_info.node_creation(data, net_comp, network_pywr)
     # network_pywr = json_info.node_creation(data, net_comp, network_pywr)
+    # print('Creating Nodes', network_pywr['nodes'])
     
     df_recorders_nodes, df_recorders_parameters, df_recorders_extras = recorders.split_df_recorders(data['df_recorders'])
     
     print('Creating recorders')
     network_pywr = json_info.recorders_creation(df_recorders_nodes, df_recorders_parameters, df_recorders_extras, network_pywr, net_comp)
     
+    # print('BEFORE SET LOCATIONS', network_pywr['nodes'])
+    # print("")
     network_pywr = json_info.set_locations(data['df_Network_Components'], network_pywr)
+    # print('AFTER SET LOCATIONS', network_pywr['nodes'])
+    # print("")
     
     print('Creating Edges')
     print('')
     network_pywr['edges'] = json_info.create_edges(data['df_Network'])
-    
-    
 
-    
     print("pruning json file, removing extra constructors")
     network_pywr = json_info.pruning(network_pywr)
     
@@ -90,6 +92,7 @@ def main():
     
     print("Exporting dataframes to CSV files")
     json_info.export_dataframes(data)
+    
     print('Process finished')
     
 

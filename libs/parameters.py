@@ -168,13 +168,20 @@ def create_extra_parameters(network_pywr, data):
                             elif len(source_df)==1: # Value  
                                 data_attr = source_df.iloc[0][row['Column']]
                                 data_attr = read_data.read_value(data_attr, row) 
+                                if row['Column'] == 'Evaporation Cost':
+                                    print(f"Evaporation Cost 1: {source_df}")
+                                    print(f"Evaporation Cost 2: {data_attr}")
+                                    print(f"Evaporation Cost 3: {row}")
 
                             else: #vertical list
-                                data_attr = source_df[row['Column']].values.tolist()
-                                data_attr = [read_data.read_value(item, row) for item in data_attr]
+                                data_attr = source_df[row['Column']].values.tolist()    # Convert to list
+                                data_attr = [read_data.read_value(item, row) for item in data_attr] # Apply conversion to each item in list
+                                data_attr = [x for x in data_attr if str(x) != 'nan']   # Remove nan values from list
                             
-                        except:
+                        except Exception as e:
                             print(f"ERROR:  Match between SourceSheet {row['SourceSheet']} and column {row['Column']} Wrong or not defined in extra_parameters sheet")
+                            print(e)
+                            sys.exit(1)
                         
                     else: # Only 'SourceSheet' has data, not 'Column'. It means Monthly profile
 
@@ -184,15 +191,17 @@ def create_extra_parameters(network_pywr, data):
                         data_attr=list(source_df[0])
                         data_attr = [apply_conversions.transform_value_type(item) for item in data_attr]
                               
-                except:
+                except Exception as e:
                     print(f"ERROR: Sheet {row['SourceSheet']} assigned in extra_parameters sheet doesnt exist in xls file")
+                    print(e)
+                    sys.exit(1)
                 
             try:
                 param_dict[actual_parameter][name_attr]=data_attr                
             except Exception as e: 
                 print(f"ERROR: Trying to access value {data_attr} for {str(actual_parameter)}")
                 print(e)
-                break   
+                sys.exit(1)
             
             
 
@@ -240,6 +249,7 @@ def create_constant_attributes(df_attributes_constantV, this_name, this_type, th
     
     for index, row in df_attributes_constantV.iterrows():
         
+
         attribute = row['attributes']
         column_value = row['Column1']
         df_source_Value = str("df_")+row['SourceSheet1']
@@ -247,6 +257,9 @@ def create_constant_attributes(df_attributes_constantV, this_name, this_type, th
         df_source_Value = df_source_Value[df_source_Value['Node']==this_source]
         # print(f"column_value{column_value}")
         # print(f"df_source_Value{df_source_Value}")
+
+
+            
         try:
             constant_value = df_source_Value[column_value].item()
         except Exception as e: 
@@ -410,6 +423,9 @@ def completeMonthlyProfileParameter(this_node_info, this_param_row, data):
         df_source = str("df_")+this_param_row['SourceSheet1']
         df_source = data[str(df_source)]
         ref_name = this_node_info['node_source']
+        
+        if this_param_row.notnull()['Column1']:
+            ref_name = this_param_row['Column1']
 
         # print(f"____CREATING MonthlyProfileParameter for {ref_name} _____ ")
     except:
@@ -504,7 +520,7 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
         print(f"{file_name} will be created in DF Dictionary")
         globals.dict_dataframeparameter[df_origin_type][file_name]=[]
         df_source = str("df_")+sheet_name
-        print(data.keys())
+        # print(data.keys())
         df_source = data[df_source]
 
         if this_param_row['Dataframe Type'] == 'Time Series pivoted':
@@ -515,7 +531,8 @@ def completeDataFrameParameter(this_node_info, this_param_row, data):
             pass
             # print(this_param_row)
             # globals()[file_name] = df_source
-            
+    
+        
         else:
             
             try:

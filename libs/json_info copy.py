@@ -258,7 +258,7 @@ def delete_nones(_list):
     """
     
     output_delete_nones = []
-    # print("_list", _list)
+    print("_list", _list)
     
     for this_dict in _list:
         
@@ -446,29 +446,32 @@ def set_locations(df_Network_Components, network_pywr):
         locs_df['location_lat'] = locs_df['location_lat'].apply(lambda x: float(format(float(x), '.5e')))
         locs_df['location_long'] = locs_df['location_long'].apply(lambda x: float(format(float(x), '.5e')))
     except:
-        pass  
+        pass
     
-    actual_node = {}
-    list_nodes = []
+    print('INTERMIDIATE 1 SET LOCATIONS', network_pywr['nodes'])
+    print("")    
     
-    for actual_node in network_pywr['nodes']:
+    for _nodes in network_pywr['nodes']:
         geolocation_updated=0
         
         for index, row in locs_df.iterrows():
             
-            if actual_node['name']==row['name']:
+            if _nodes['name']==row['name']:
                 
-                actual_node["position"]={}
-                actual_node["position"]['geographic']=[row['location_long'], row['location_lat']]
-                list_nodes.append(actual_node)
+                _nodes["position"]={}
+                _nodes["position"]['geographic']=[row['location_long'], row['location_lat']]
+                # print('INTERMIDIATE 2 SET LOCATIONS', _nodes)
+                print("")
+                network_pywr.update(_nodes)
+                # network_pywr.update(_nodes) #original working
                 geolocation_updated=1
+        print('INTERMIDIATE 3 SET LOCATIONS',  network_pywr['nodes'])
         
         if (geolocation_updated==0):
-            actual_node["position"]={}   
-            actual_node["position"]['geographic']=default_location
-            list_nodes.append(actual_node)
-    
-    network_pywr['nodes'] = list_nodes        
+            _nodes["position"]={}   
+            _nodes["position"]['geographic']=default_location
+            network_pywr.update(_nodes)
+            
             
     return network_pywr
 
@@ -488,6 +491,7 @@ def pruning(network_pywr):
     debug_JSON['edges'] = network_pywr['edges']
     debug_JSON['parameters'] = network_pywr['parameters']
     debug_JSON['recorders'] = network_pywr['recorders']
+    print(debug_JSON['nodes'])
     debug_JSON['nodes'] = delete_nones(debug_JSON['nodes'])
     debug_JSON=remove_constructors_info(debug_JSON)
     

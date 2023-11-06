@@ -16,7 +16,21 @@ def monthly_days():
     df_days_month=df_days_month.set_index('months')
     df_days_month=df_days_month.T
     
-
+def monthToNum(shortMonth):
+    return {
+            'Jan': 1,
+            'Feb': 2,
+            'Mar': 3,
+            'Apr': 4,
+            'May': 5,
+            'Jun': 6,
+            'Jul': 7,
+            'Aug': 8,
+            'Sep': 9, 
+            'Oct': 10,
+            'Nov': 11,
+            'Dec': 12
+    }[shortMonth]
 
 def convert_time_flowvalue(dataframetoconvert_flowvalue, units_from, units_to, column_name):
     # Convert time units from vol/Year or vol/Month to vol/Day
@@ -232,20 +246,56 @@ def ts2unstack(timeseries_df, column_value):
 
 
 
+# def df2ts2unstack(timeseries_df): 
+#     """ 
+#     Read Dataframe >>>>>>> Node     Year     Jan Feb Mar May ... Dec
+    
+#     Return         >>>>>>> Date     Node1  Node2  Node3....
+#     """
+#     timeseries_df=timeseries_df[timeseries_df['Node'].notna()]
+#     timeseries_df=timeseries_df[timeseries_df['Year'].notna()]
+
+#     timeseries_df = timeseries_df.melt(id_vars=['Node', 'Year'], var_name='date', value_name='level')
+#     print(timeseries_df)
+#     timeseries_df['timestep'] = timeseries_df.apply(cnv, axis=1) # combine year and month columns, Add day
+#     timeseries_df.drop(['Year'], axis=1,inplace=True) # Drop extra column year
+#     timeseries_df["timestep"] = pd.to_datetime(timeseries_df["timestep"])
+#     timeseries_df = timeseries_df.set_index('timestep')
+#     timeseries_df = pd.pivot_table(timeseries_df, values='level', index=timeseries_df.index,columns=['Node'])
+#     print(timeseries_df)
+
+#     return timeseries_df
+
 def df2ts2unstack(timeseries_df): 
     """ 
-    Read Dataframe Node     Year     Jan Feb Mar May ... Dec
-    Return         Date     Node1  Node2  Node3....
+    Read Dataframe >>>>>>> Node     Year     Jan Feb Mar May ... Dec
+    
+    Return         >>>>>>> Date     Node1  Node2  Node3....
     """
     timeseries_df=timeseries_df[timeseries_df['Node'].notna()]
     timeseries_df=timeseries_df[timeseries_df['Year'].notna()]
 
-    timeseries_df = timeseries_df.melt(id_vars=['Node', 'Year'], var_name='date', value_name='level')
-    timeseries_df['timestep'] = timeseries_df.apply(cnv, axis=1) # combine year and month columns, Add day
-    timeseries_df.drop(['Year'], axis=1,inplace=True) # Drop extra column year
-    timeseries_df["timestep"] = pd.to_datetime(timeseries_df["timestep"])
+    timeseries_df = timeseries_df.melt(id_vars=['Node', 'Year'], value_vars=months,
+                                       var_name='Month', value_name='value')
+    
+    timeseries_df['Month'] = timeseries_df['Month'].apply(monthToNum)
+    timeseries_df['timestep'] = pd.to_datetime(timeseries_df[['Year', 'Month']].assign(DAY=1))
+    # timeseries_df['timestep'] = timeseries_df.apply(cnv, axis=1) # combine year and month columns, Add day
+    timeseries_df.drop(['Year', 'Month'], axis=1,inplace=True) # Drop extra column year
+    # timeseries_df["timestep"] = pd.to_datetime(timeseries_df["timestep"])
+    # print(timeseries_df.head(3))
+    timeseries_df.reset_index(inplace=True)
+    print(timeseries_df.head(3))
     timeseries_df = timeseries_df.set_index('timestep')
-    timeseries_df = pd.pivot_table(timeseries_df, values='level', index=timeseries_df.index,columns=['Node'])
+    timeseries_df = pd.pivot_table(timeseries_df, values='value', index=timeseries_df.index,columns=['Node'])
+    timeseries_df.reset_index(inplace=True)
+    print(timeseries_df.head(4))
+    
+    # timeseries_df = timeseries_df.set_index('timestep')
+    # timeseries_df.drop(['Node'], axis=1,inplace=True) 
+    
+    print(timeseries_df.head(5))
+    
 
     return timeseries_df
 
@@ -313,3 +363,34 @@ def transform_value_type(constant_value, function_special='none', lform='.6e'):
         constant_value = constant_value2
         
     return constant_value
+
+
+def freq_Month_to_Day_Duplicate(df_):
+    print(df_.head(3))
+    month_start = df_.loc[0]['timestep'].strftime('%Y-%m')
+    month_end = df_.loc[len(df_['timestep'])-1]['timestep'].strftime('%Y-%m')
+    print(month_start, month_end)
+    df = pd.DataFrame({ # Create time series freq DAILY
+        'date': pd.date_range(
+            start = pd.Timestamp(month_start),                        
+            end = pd.Timestamp(month_end) + pd.offsets.MonthEnd(0),  # <-- 2018-08-31 with MonthEnd
+            freq = 'D'
+            )
+        })
+    print(df.head(10))
+    # df['timestep'] = pd.to_datetime(df['timestep']).dt.to_period('m') # For freq D, create column freq M
+
+    df['year_month'] = pd.to_datetime(df['date']).dt.to_period('m') # For freq D, create column freq M
+    df_['year_month'] = pd.to_datetime(df_['timestep']).dt.to_period('m') # For freq D, create column freq M
+    print(df.head(10))
+    # dataframetoconvert = df.merge(dataframetoconvert, on='year_month', how='left') # Merge dataframes daily average per month with daily freq. Assigning 1 value per day in dates range
+
+    # dataframetoconvert.drop(columns=['days','year_month', 'timestep'], inplace=True) 
+    # dataframetoconvert.rename(columns={'date':'timestep'}, inplace=True)
+            
+            
+    df_return = df.merge(df_, on='year_month', how='left') # Merge dataframes daily average per month with daily freq. Assigning 1 value per day in dates range
+    df_return.drop(columns=['year_month','timestep'], inplace=True) 
+    df_return.rename(columns={'date':'timestep'}, inplace=True)
+    
+    return df_return
